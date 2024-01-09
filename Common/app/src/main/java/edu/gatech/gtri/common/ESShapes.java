@@ -1,14 +1,15 @@
 package edu.gatech.gtri.common;
 
 import java.lang.Math;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
 import java.nio.ShortBuffer;
 
 public class ESShapes
 {
-
     public int genSphere ( int numSlices, float radius )
     {
         int i;
@@ -26,7 +27,7 @@ public class ESShapes
         mTexCoords = ByteBuffer.allocateDirect ( numVertices * 2 * 4 )
                 .order ( ByteOrder.nativeOrder() ).asFloatBuffer();
         mIndices = ByteBuffer.allocateDirect ( numIndices * 2 )
-                .order ( ByteOrder.nativeOrder() ).asShortBuffer();
+                .order ( ByteOrder.nativeOrder() ).asIntBuffer();
 
         for ( i = 0; i < numParallels + 1; i++ )
         {
@@ -124,7 +125,7 @@ public class ESShapes
         mTexCoords = ByteBuffer.allocateDirect ( numVertices * 2 * 4 )
                 .order ( ByteOrder.nativeOrder() ).asFloatBuffer();
         mIndices = ByteBuffer.allocateDirect ( numIndices * 2 )
-                .order ( ByteOrder.nativeOrder() ).asShortBuffer();
+                .order ( ByteOrder.nativeOrder() ).asIntBuffer();
 
         mVertices.put ( cubeVerts ).position ( 0 );
 
@@ -136,12 +137,66 @@ public class ESShapes
         mNormals.put ( cubeNormals ).position ( 0 );
         mTexCoords.put ( cubeTex ).position ( 0 );
 
-        short[] cubeIndices = { 0, 2, 1, 0, 3, 2, 4, 5, 6, 4, 6, 7, 8, 9, 10,
+        int[] cubeIndices = { 0, 2, 1, 0, 3, 2, 4, 5, 6, 4, 6, 7, 8, 9, 10,
                 8, 10, 11, 12, 15, 14, 12, 14, 13, 16, 17, 18, 16, 18, 19, 20,
                 23, 22, 20, 22, 21
         };
 
         mIndices.put ( cubeIndices ).position ( 0 );
+        mNumIndices = numIndices;
+        return numIndices;
+    }
+
+    public int genSquareGrid(int size)
+    {
+        int i;
+        int j;
+        int numIndices = ( size - 1 ) * ( size - 1 ) * 2 * 3;
+
+        int numVertices = size * size;
+        float stepSize = (float) size - 1;
+
+        // Allocate memory for buffers
+        mVertices = ByteBuffer.allocateDirect ( numVertices * 3 * 4 )
+           .order ( ByteOrder.nativeOrder() ).asFloatBuffer();
+        mIndices = ByteBuffer.allocateDirect ( numIndices * 2 )
+           .order ( ByteOrder.nativeOrder() ).asIntBuffer();
+
+        for ( i = 0; i < size; ++i ) // row
+        {
+            for ( j = 0; j < size; ++j ) // column
+            {
+                mVertices.put (3 * (j + i * size), i / stepSize);
+                mVertices.put (3 * (j + i * size) + 1, j / stepSize);
+                mVertices.put (3 * (j + i * size) + 2, 0.0f);
+            }
+        }
+
+        for ( i = 0; i < size - 1; ++i )
+        {
+            for ( j = 0; j < size - 1; ++j )
+            {
+                // two triangles per quad
+                //( *indices ) [ 6 * ( j + i * ( size - 1 ) )     ] = j + ( i )   * ( size )    ;
+                mIndices.put (6 * (j + i * (size - 1)), j + (i) * (size));
+
+                //( *indices ) [ 6 * ( j + i * ( size - 1 ) ) + 1 ] = j + ( i )   * ( size ) + 1;
+                mIndices.put (6 * (j + i * (size - 1)) + 1, j + (i) * (size) + 1);
+
+                //( *indices ) [ 6 * ( j + i * ( size - 1 ) ) + 2 ] = j + ( i + 1 ) * ( size ) + 1;
+                mIndices.put (6 * (j + i * (size - 1)) + 2, j + (i + 1) * (size) + 1);
+
+                //( *indices ) [ 6 * ( j + i * ( size - 1 ) ) + 3 ] = j + ( i )   * ( size )    ;
+                mIndices.put (6 * (j + i * (size - 1)) + 3, j + (i) * (size));
+
+                //( *indices ) [ 6 * ( j + i * ( size - 1 ) ) + 4 ] = j + ( i + 1 ) * ( size ) + 1;
+                mIndices.put (6 * (j + i * (size - 1)) + 4, j + (i + 1) * (size) + 1);
+
+                //( *indices ) [ 6 * ( j + i * ( size - 1 ) ) + 5 ] = j + ( i + 1 ) * ( size )    ;
+                mIndices.put (6 * (j + i * (size - 1)) + 5, j + (i + 1) * (size));
+            }
+        }
+
         mNumIndices = numIndices;
         return numIndices;
     }
@@ -161,7 +216,7 @@ public class ESShapes
         return mTexCoords;
     }
 
-    public ShortBuffer getIndices()
+    public IntBuffer getIndices()
     {
         return mIndices;
     }
@@ -175,6 +230,6 @@ public class ESShapes
     private FloatBuffer mVertices;
     private FloatBuffer mNormals;
     private FloatBuffer mTexCoords;
-    private ShortBuffer mIndices;
+    private IntBuffer mIndices;
     private int mNumIndices;
 }
