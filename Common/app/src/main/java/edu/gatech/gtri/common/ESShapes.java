@@ -159,7 +159,7 @@ public class ESShapes
         // Allocate memory for buffers
         mVertices = ByteBuffer.allocateDirect ( numVertices * 3 * 4 )
            .order ( ByteOrder.nativeOrder() ).asFloatBuffer();
-        mIndices = ByteBuffer.allocateDirect ( numIndices * 2 )
+        mIndices = ByteBuffer.allocateDirect ( numIndices * 4 )
            .order ( ByteOrder.nativeOrder() ).asIntBuffer();
 
         for ( i = 0; i < size; ++i ) // row
@@ -176,23 +176,12 @@ public class ESShapes
         {
             for ( j = 0; j < size - 1; ++j )
             {
-                // two triangles per quad
-                //( *indices ) [ 6 * ( j + i * ( size - 1 ) )     ] = j + ( i )   * ( size )    ;
+                // Two triangles per quad
                 mIndices.put (6 * (j + i * (size - 1)), j + (i) * (size));
-
-                //( *indices ) [ 6 * ( j + i * ( size - 1 ) ) + 1 ] = j + ( i )   * ( size ) + 1;
                 mIndices.put (6 * (j + i * (size - 1)) + 1, j + (i) * (size) + 1);
-
-                //( *indices ) [ 6 * ( j + i * ( size - 1 ) ) + 2 ] = j + ( i + 1 ) * ( size ) + 1;
                 mIndices.put (6 * (j + i * (size - 1)) + 2, j + (i + 1) * (size) + 1);
-
-                //( *indices ) [ 6 * ( j + i * ( size - 1 ) ) + 3 ] = j + ( i )   * ( size )    ;
                 mIndices.put (6 * (j + i * (size - 1)) + 3, j + (i) * (size));
-
-                //( *indices ) [ 6 * ( j + i * ( size - 1 ) ) + 4 ] = j + ( i + 1 ) * ( size ) + 1;
                 mIndices.put (6 * (j + i * (size - 1)) + 4, j + (i + 1) * (size) + 1);
-
-                //( *indices ) [ 6 * ( j + i * ( size - 1 ) ) + 5 ] = j + ( i + 1 ) * ( size )    ;
                 mIndices.put (6 * (j + i * (size - 1)) + 5, j + (i + 1) * (size));
             }
         }

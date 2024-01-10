@@ -1,6 +1,8 @@
 package edu.gatech.gtri.terrainrendering;
 
 import static javax.microedition.khronos.opengles.GL11.GL_ELEMENT_ARRAY_BUFFER;
+import static javax.microedition.khronos.opengles.GL11.GL_STATIC_DRAW;
+import static javax.microedition.khronos.opengles.GL11.GL_ARRAY_BUFFER;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -13,6 +15,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.IntBuffer;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -34,9 +37,9 @@ public class TerrainRenderingRenderer implements GLSurfaceView.Renderer
    ///
    //  Load texture from asset
    //
-   private int loadTextureFromAsset ( String fileName )
+   private void loadTextureFromAsset ( String fileName )
    {
-      int[] textureId = new int[1];
+      textureId[0] = 0;
       Bitmap bitmap = null;
       InputStream is = null;
 
@@ -51,12 +54,13 @@ public class TerrainRenderingRenderer implements GLSurfaceView.Renderer
 
       if ( is == null )
       {
-         return 0;
+         return;
       }
 
       bitmap = BitmapFactory.decodeStream ( is );
 
-      GLES30.glGenTextures ( 1, textureId, 0 );
+      textureIBO = ByteBuffer.allocateDirect ( 4 ).order ( ByteOrder.nativeOrder() ).asIntBuffer();
+      GLES30.glGenTextures ( 1, textureIBO );
       GLES30.glBindTexture ( GLES30.GL_TEXTURE_2D, textureId[0] );
 
       GLUtils.texImage2D ( GLES30.GL_TEXTURE_2D, 0, bitmap, 0 );
@@ -65,8 +69,6 @@ public class TerrainRenderingRenderer implements GLSurfaceView.Renderer
       GLES30.glTexParameteri ( GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MAG_FILTER, GLES30.GL_LINEAR );
       GLES30.glTexParameteri ( GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_WRAP_S, GLES30.GL_CLAMP_TO_EDGE );
       GLES30.glTexParameteri ( GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_WRAP_T, GLES30.GL_CLAMP_TO_EDGE );
-
-      return textureId[0];
    }
 
    ///
@@ -131,17 +133,31 @@ public class TerrainRenderingRenderer implements GLSurfaceView.Renderer
       GLES30.glClearColor ( 1.0f, 1.0f, 1.0f, 0.0f );
 
       // Load the heightmap texture images from 'assets'
-      textureId = loadTextureFromAsset ( "textures/heightmap.tga" );
+      loadTextureFromAsset ( "textures/heightmap.png" );
 
       // Generate the position and indices of a square grid for the base terrain
       gridSize = 200;
       mSquareGrid.genSquareGrid (gridSize);
 
+      // Initialize the VBO Ids
+      mVBOIds[0] = 0;
+      mVBOIds[1] = 1;
+
       // Index buffer for base terrain
-      GLES30.glGenBuffers ( 1, mSquareGrid.getIndices() );
-      GLES30.glBindBuffer ( GL_ELEMENT_ARRAY_BUFFER, indicesIBO );
-      GLES30.glBufferData ( GL_ELEMENT_ARRAY_BUFFER, mSquareGrid.getNumIndices() * sizeof ( GLuint ), indices, GL_STATIC_DRAW );
+      indicesIBO = ByteBuffer.allocateDirect ( 4 ).order ( ByteOrder.nativeOrder() ).asIntBuffer();
+      GLES30.glGenBuffers ( 1, indicesIBO );
+      GLES30.glBindBuffer ( GL_ELEMENT_ARRAY_BUFFER, mVBOIds[0] );
+      GLES30.glBufferData ( GL_ELEMENT_ARRAY_BUFFER, mSquareGrid.getNumIndices() * 4, mSquareGrid.getIndices(), GL_STATIC_DRAW );
       GLES30.glBindBuffer ( GL_ELEMENT_ARRAY_BUFFER, 0 );
+
+      // Position VBO for base terrain
+      positionVBO = ByteBuffer.allocateDirect ( 4 ).order ( ByteOrder.nativeOrder() ).asIntBuffer();
+      GLES30.glGenBuffers ( 1, positionVBO );
+      GLES30.glBindBuffer ( GL_ARRAY_BUFFER, mVBOIds[1] );
+      GLES30.glBufferData ( GL_ARRAY_BUFFER, gridSize * gridSize * 4 * 3, mSquareGrid.getVertices(), GL_STATIC_DRAW );
+
+      // Clear color
+      GLES30.glClearColor( 1.0f, 1.0f, 1.0f, 1.0f );
    }
 
    private void update()
@@ -155,7 +171,7 @@ public class TerrainRenderingRenderer implements GLSurfaceView.Renderer
 
       // Generate a perspective matrix with a 60 degree FOV
       perspective.matrixLoadIdentity();
-      perspective.perspective ( 60.0f, aspect, 1.0f, 20.0f );
+      perspective.perspective ( 60.0f, aspect, 0.1f, 20.0f );
 
       // Generate a model view matrix to rotate/translate the terrain
       modelview.matrixLoadIdentity();
@@ -182,37 +198,34 @@ public class TerrainRenderingRenderer implements GLSurfaceView.Renderer
       GLES30.glViewport ( 0, 0, mWidth, mHeight );
 
       // Clear the color buffer
-      GLES30.glClear ( GLES30.GL_COLOR_BUFFER_BIT );
+      GLES30.glClear ( GLES30.GL_COLOR_BUFFER_BIT | GLES30.GL_DEPTH_BUFFER_BIT );
 
       // Use the program object
       GLES30.glUseProgram ( mProgramObject );
 
       // Load the vertex position
-      mSquareGrid.getVertices().position ( 0 );
-      GLES30.glVertexAttribPointer ( 0, 3, GLES30.GL_FLOAT, false, 5 * 4, mSquareGrid.getVertices() );
+      GLES30.glBindBuffer ( GL_ARRAY_BUFFER, mVBOIds[1] );
+      GLES30.glVertexAttribPointer ( POSITION_LOC, 3, GLES30.GL_FLOAT, false, 3 * 4, 0 );
+      GLES30.glEnableVertexAttribArray ( POSITION_LOC );
 
-      // Load the texture coordinate
-      mSquareGrid.getVertices().position ( 3 );
-      GLES30.glVertexAttribPointer ( 1, 2, GLES30.GL_FLOAT, false, 5 * 4, mSquareGrid.getVertices() );
+      // Bind the index buffer
+      GLES30.glBindBuffer ( GL_ELEMENT_ARRAY_BUFFER, mVBOIds[0] );
 
-      GLES30.glEnableVertexAttribArray ( 0 );
-      GLES30.glEnableVertexAttribArray ( 1 );
-
-      // Bind the base map
+      // Bind the height map
       GLES30.glActiveTexture ( GLES30.GL_TEXTURE0 );
-      GLES30.glBindTexture ( GLES30.GL_TEXTURE_2D, mBaseMapTexId );
+      GLES30.glBindTexture ( GLES30.GL_TEXTURE_2D, textureId[0] );
 
-      // Set the base map sampler to texture unit to 0
-      GLES30.glUniform1i ( mBaseMapLoc, 0 );
+      // Load the MVP matrix
+      GLES30.glUniformMatrix4fv ( mvpLoc, 1, false, mvpMatrix.getAsFloatBuffer() );
 
-      // Bind the light map
-      GLES30.glActiveTexture ( GLES30.GL_TEXTURE1 );
-      GLES30.glBindTexture ( GLES30.GL_TEXTURE_2D, mLightMapTexId );
+      // Load the light direction
+      GLES30.glUniform3f ( lightDirectionLoc, 0.86f, 0.14f, 0.49f );
 
-      // Set the light map sampler to texture unit 1
-      GLES30.glUniform1i ( mLightMapLoc, 1 );
+      // Set the height map sampler to texture unit to 0
+      GLES30.glUniform1i ( samplerLoc, 0 );
 
-      GLES30.glDrawElements ( GLES30.GL_TRIANGLES, 6, GLES30.GL_UNSIGNED_SHORT, mIndices );
+      // Draw the grid
+      GLES30.glDrawElements ( GLES30.GL_TRIANGLES, mSquareGrid.getNumIndices(), GLES30.GL_UNSIGNED_INT, mSquareGrid.getIndices() );
    }
 
    ///
@@ -235,11 +248,15 @@ public class TerrainRenderingRenderer implements GLSurfaceView.Renderer
    private int samplerLoc;
 
    // Texture handle
-   private int textureId;
+   private IntBuffer textureIBO;
+   private int [] textureId = new int[1];
 
    // VBOs
-   private int positionVBO;
-   private int indicesIBO;
+   private IntBuffer positionVBO;
+   private IntBuffer indicesIBO;
+
+   // VertexBufferObject Ids
+   private int [] mVBOIds = new int[2];
 
    // Number of indices
    private int numIndices;
