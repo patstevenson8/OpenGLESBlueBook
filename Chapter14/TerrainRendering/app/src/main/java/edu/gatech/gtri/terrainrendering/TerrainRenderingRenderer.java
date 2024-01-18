@@ -10,12 +10,15 @@ import android.graphics.BitmapFactory;
 import android.opengl.GLES30;
 import android.opengl.GLSurfaceView;
 import android.opengl.GLUtils;
+import android.os.SystemClock;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.IntBuffer;
+import java.nio.ShortBuffer;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -147,7 +150,7 @@ public class TerrainRenderingRenderer implements GLSurfaceView.Renderer
       indicesIBO = ByteBuffer.allocateDirect ( 4 ).order ( ByteOrder.nativeOrder() ).asIntBuffer();
       GLES30.glGenBuffers ( 1, indicesIBO );
       GLES30.glBindBuffer ( GL_ELEMENT_ARRAY_BUFFER, mVBOIds[0] );
-      GLES30.glBufferData ( GL_ELEMENT_ARRAY_BUFFER, mSquareGrid.getNumIndices() * 4, mSquareGrid.getIndices(), GL_STATIC_DRAW );
+      GLES30.glBufferData ( GL_ELEMENT_ARRAY_BUFFER, mSquareGrid.getNumIndices() * 2, mSquareGrid.getIndices(), GL_STATIC_DRAW );
       GLES30.glBindBuffer ( GL_ELEMENT_ARRAY_BUFFER, 0 );
 
       // Position VBO for base terrain
@@ -156,15 +159,36 @@ public class TerrainRenderingRenderer implements GLSurfaceView.Renderer
       GLES30.glBindBuffer ( GL_ARRAY_BUFFER, mVBOIds[1] );
       GLES30.glBufferData ( GL_ARRAY_BUFFER, gridSize * gridSize * 4 * 3, mSquareGrid.getVertices(), GL_STATIC_DRAW );
 
+      // Starting rotation angle for the cube
+      mAngle = 45.0f;
+
       // Clear color
       GLES30.glClearColor( 1.0f, 1.0f, 1.0f, 1.0f );
    }
 
    private void update()
    {
+      if ( mLastTime == 0 )
+      {
+         mLastTime = SystemClock.uptimeMillis();
+      }
+
+      long curTime = SystemClock.uptimeMillis();
+      long elapsedTime = curTime - mLastTime;
+      float deltaTime = elapsedTime / 1000.0f;
+      mLastTime = curTime;
+
       ESTransform perspective = new ESTransform();
       ESTransform modelview = new ESTransform();
       float aspect;
+
+      // Compute a rotation angle based on time to rotate the cube
+      mAngle += ( deltaTime * 40.0f );
+
+      if ( mAngle >= 360.0f )
+      {
+         mAngle -= 360.0f;
+      }
 
       // Compute the window aspect ratio
       aspect = ( float ) mWidth / ( float ) mHeight;
@@ -177,10 +201,11 @@ public class TerrainRenderingRenderer implements GLSurfaceView.Renderer
       modelview.matrixLoadIdentity();
 
       // Center the terrain
-      modelview.translate ( -0.5f, -0.5f, -0.7f );
+      //modelview.translate ( -0.5f, -0.5f, -0.7f );
+      modelview.translate ( 0.0f, 0.0f, -2.0f );
 
       // Rotate
-      modelview.rotate ( 45.0f, 1.0f, 0.0f, 0.0f );
+      modelview.rotate ( mAngle, 1.0f, 0.0f, 0.0f );
 
       // Compute the final MVP by multiplying the
       // modevleiw and perspective matrices together
@@ -273,6 +298,10 @@ public class TerrainRenderingRenderer implements GLSurfaceView.Renderer
    // Additional member variables
    private int mWidth;
    private int mHeight;
+   private long mLastTime = 0;
+
+   // Rotation angle
+   private float mAngle;
 
    final int POSITION_LOC = 0;
    private Context mContext;
