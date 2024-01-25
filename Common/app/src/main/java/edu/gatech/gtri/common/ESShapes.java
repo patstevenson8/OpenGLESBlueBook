@@ -90,9 +90,10 @@ public class ESShapes
         int numVertices = 24;
         int numIndices = 36;
 
-        float[] cubeVerts = { -0.5f, -0.5f, -0.5f, -0.5f, -0.5f, 0.5f, 0.5f,
-                -0.5f, 0.5f, 0.5f, -0.5f, -0.5f, -0.5f, 0.5f, -0.5f, -0.5f,
-                0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, -0.5f, -0.5f, -0.5f,
+        float[] cubeVerts = { -0.5f, -0.5f, -0.5f, -0.5f, -0.5f,  0.5f,
+                               0.5f, -0.5f,  0.5f,  0.5f, -0.5f, -0.5f,
+                              -0.5f,  0.5f, -0.5f, -0.5f,  0.5f, 0.5f,
+           0.5f, 0.5f, 0.5f, 0.5f, 0.5f, -0.5f, -0.5f, -0.5f,
                 -0.5f, -0.5f, 0.5f, -0.5f, 0.5f, 0.5f, -0.5f, 0.5f, -0.5f,
                 -0.5f, -0.5f, -0.5f, 0.5f, -0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f,
                 0.5f, -0.5f, 0.5f, -0.5f, -0.5f, -0.5f, -0.5f, -0.5f, 0.5f,
@@ -147,20 +148,18 @@ public class ESShapes
         return numIndices;
     }
 
-    public int genSquareGrid(int size)
+    public int genSquareGrid(short size)
     {
-        int i;
-        int j;
+        short i;
+        short j;
         int numIndices = ( size - 1 ) * ( size - 1 ) * 2 * 3;
 
         int numVertices = size * size;
         float stepSize = (float) size - 1;
 
         // Allocate memory for buffers
-        mVertices = ByteBuffer.allocateDirect ( numVertices * 3 * 4 )
-           .order ( ByteOrder.nativeOrder() ).asFloatBuffer();
-        mIndices = ByteBuffer.allocateDirect ( numIndices * 2 )
-           .order ( ByteOrder.nativeOrder() ).asShortBuffer();
+        mVertices = ByteBuffer.allocateDirect ( numVertices * 3 * 4 ).order ( ByteOrder.nativeOrder() ).asFloatBuffer();
+        mIndices = ByteBuffer.allocateDirect ( numIndices * 2 ).order ( ByteOrder.nativeOrder() ).asShortBuffer();
 
         for ( i = 0; i < size; ++i ) // row
         {
@@ -177,9 +176,10 @@ public class ESShapes
             for ( j = 0; j < size - 1; ++j )
             {
                 // Two triangles per quad
-                mIndices.put (6 * (j + i * (size - 1)), (short) (j + (i) * (size)));
+                mIndices.put (6 * (j + i * (size - 1)) + 0, (short) (j + (i) * (size)));
                 mIndices.put (6 * (j + i * (size - 1)) + 1, (short) (j + (i) * (size) + 1));
                 mIndices.put (6 * (j + i * (size - 1)) + 2, (short) (j + (i + 1) * (size) + 1));
+
                 mIndices.put (6 * (j + i * (size - 1)) + 3, (short) (j + (i) * (size)));
                 mIndices.put (6 * (j + i * (size - 1)) + 4, (short) (j + (i + 1) * (size) + 1));
                 mIndices.put (6 * (j + i * (size - 1)) + 5, (short) (j + (i + 1) * (size)));
@@ -194,26 +194,19 @@ public class ESShapes
     {
         return mVertices;
     }
-
     public FloatBuffer getNormals()
     {
         return mNormals;
     }
-
     public FloatBuffer getTexCoords()
     {
         return mTexCoords;
     }
-
     public ShortBuffer getIndices()
     {
         return mIndices;
     }
-
-    public int getNumIndices()
-    {
-        return mNumIndices;
-    }
+    public int getNumIndices() { return mNumIndices; }
 
     // Member variables
     private FloatBuffer mVertices;
