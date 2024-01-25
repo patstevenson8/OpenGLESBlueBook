@@ -76,46 +76,10 @@ public class TerrainRenderingRenderer implements GLSurfaceView.Renderer
    //
    public void onSurfaceCreated ( GL10 glUnused, EGLConfig config )
    {
-      String vShaderStr =
-         "#version 300 es                                                                \n" +
-            "uniform mat4 u_mvpMatrix;                                                   \n" +
-            "uniform vec3 u_lightDirection;                                              \n" +
-            "layout(location = 0) in vec4 a_position;                                    \n" +
-            "uniform sampler2D s_texture;                                                \n" +
-            "out vec4 v_color;                                                           \n" +
-            "void main()                                                                 \n" +
-            "{                                                                           \n" +
-            "   // compute vertex normal from height map                                 \n" +
-            "   float hxl = textureOffset( s_texture, a_position.xy, ivec2(-1,  0) ).r;  \n" +
-            "   float hxr = textureOffset( s_texture, a_position.xy, ivec2( 1,  0) ).r;  \n" +
-            "   float hyl = textureOffset( s_texture, a_position.xy, ivec2( 0, -1) ).r;  \n" +
-            "   float hyr = textureOffset( s_texture, a_position.xy, ivec2( 0,  1) ).r;  \n" +
-            "   vec3 u = normalize( vec3(0.05, 0.0, hxr-hxl) );                          \n" +
-            "   vec3 v = normalize( vec3(0.0, 0.05, hyr-hyl) );                          \n" +
-            "   vec3 normal = cross( u, v );                                             \n" +
-            "                                                                            \n" +
-            "   // compute diffuse lighting                                              \n" +
-            "   float diffuse = dot( normal, u_lightDirection );                         \n" +
-            "   v_color = vec4( vec3(diffuse), 1.0 );                                    \n" +
-            "                                                                            \n" +
-            "   // get vertex position from height map                                   \n" +
-            "   float h = texture ( s_texture, a_position.xy ).r;                        \n" +
-            "   vec4 v_position = vec4 ( a_position.xy, h/2.5, a_position.w );           \n" +
-            "   gl_Position = u_mvpMatrix * v_position;                                  \n" +
-            "}                                                                           \n";
-
-      String fShaderStr =
-         "#version 300 es                                                                \n" +
-            "precision mediump float;                                                    \n" +
-            "in vec4 v_color;                                                            \n" +
-            "layout(location = 0) out vec4 outColor;                                     \n" +
-            "void main()                                                                 \n" +
-            "{                                                                           \n" +
-            "  outColor = v_color;                                                       \n" +
-            "}                                                                           \n";
-
-      // Load the shaders and get a linked program object
-      mProgramObject = ESShader.loadProgram ( vShaderStr, fShaderStr );
+      // Load shaders from 'assets' and get a linked program object
+      mProgramObject = ESShader.loadProgramFromAsset ( mContext,
+                                                       "shaders/vertexShader.vert",
+                                                       "shaders/fragmentShader.frag" );
 
       // Get the uniform locations
       mvpLoc = GLES30.glGetUniformLocation ( mProgramObject, "u_mvpMatrix" );
