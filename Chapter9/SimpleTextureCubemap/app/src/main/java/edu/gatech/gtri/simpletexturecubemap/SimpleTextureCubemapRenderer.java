@@ -148,14 +148,11 @@ public class SimpleTextureCubemapRenderer implements GLSurfaceView.Renderer
       GLES30.glUseProgram ( mProgramObject );
 
       // Load the vertex position
-      GLES30.glVertexAttribPointer ( 0, 3, GLES30.GL_FLOAT,
-         false, 0, mSphere.getVertices() );
-      // Load the texture coordinate
-
-      GLES30.glVertexAttribPointer ( 1, 3, GLES30.GL_FLOAT,
-         false, 0, mSphere.getNormals() );
-
+      GLES30.glVertexAttribPointer ( 0, 3, GLES30.GL_FLOAT, false, 0, mSphere.getVertices() );
       GLES30.glEnableVertexAttribArray ( 0 );
+
+      // Load the texture coordinate
+      GLES30.glVertexAttribPointer ( 1, 3, GLES30.GL_FLOAT, false, 0, mSphere.getNormals() );
       GLES30.glEnableVertexAttribArray ( 1 );
 
       // Bind the texture
@@ -176,7 +173,6 @@ public class SimpleTextureCubemapRenderer implements GLSurfaceView.Renderer
       mWidth = width;
       mHeight = height;
    }
-
 
    // Handle to a program object
    private int mProgramObject;

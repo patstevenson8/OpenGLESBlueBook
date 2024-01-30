@@ -1,8 +1,8 @@
-package edu.gatech.gtri.terrainrendering;
+package edu.gatech.gtri.globerendering;
 
+import static javax.microedition.khronos.opengles.GL11.GL_ARRAY_BUFFER;
 import static javax.microedition.khronos.opengles.GL11.GL_ELEMENT_ARRAY_BUFFER;
 import static javax.microedition.khronos.opengles.GL11.GL_STATIC_DRAW;
-import static javax.microedition.khronos.opengles.GL11.GL_ARRAY_BUFFER;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -10,6 +10,7 @@ import android.graphics.BitmapFactory;
 import android.opengl.GLES30;
 import android.opengl.GLSurfaceView;
 import android.opengl.GLUtils;
+import android.os.SystemClock;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -24,12 +25,12 @@ import edu.gatech.gtri.common.ESShader;
 import edu.gatech.gtri.common.ESShapes;
 import edu.gatech.gtri.common.ESTransform;
 
-public class TerrainRenderingRenderer implements GLSurfaceView.Renderer
+public class GlobeRenderingRenderer implements GLSurfaceView.Renderer
 {
    ///
    // Constructor
    //
-   public TerrainRenderingRenderer ( Context context )
+   public GlobeRenderingRenderer ( Context context )
    {
       mContext = context;
    }
@@ -61,56 +62,55 @@ public class TerrainRenderingRenderer implements GLSurfaceView.Renderer
 
       IntBuffer textureIBO = ByteBuffer.allocateDirect ( 4 ).order ( ByteOrder.nativeOrder() ).asIntBuffer();
       GLES30.glGenTextures ( 1, textureIBO );
-      GLES30.glBindTexture ( GLES30.GL_TEXTURE_2D, textureId[0] );
+      GLES30.glBindTexture ( GLES30.GL_TEXTURE_CUBE_MAP, textureId[0] );
 
-      GLUtils.texImage2D ( GLES30.GL_TEXTURE_2D, 0, bitmap, 0 );
+      GLUtils.texImage2D ( GLES30.GL_TEXTURE_CUBE_MAP, 0, bitmap, 0 );
 
-      GLES30.glTexParameteri ( GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MIN_FILTER, GLES30.GL_LINEAR );
-      GLES30.glTexParameteri ( GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MAG_FILTER, GLES30.GL_LINEAR );
-      GLES30.glTexParameteri ( GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_WRAP_S, GLES30.GL_CLAMP_TO_EDGE );
-      GLES30.glTexParameteri ( GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_WRAP_T, GLES30.GL_CLAMP_TO_EDGE );
+      GLES30.glTexParameteri ( GLES30.GL_TEXTURE_CUBE_MAP, GLES30.GL_TEXTURE_MIN_FILTER, GLES30.GL_NEAREST );
+      GLES30.glTexParameteri ( GLES30.GL_TEXTURE_CUBE_MAP, GLES30.GL_TEXTURE_MAG_FILTER, GLES30.GL_NEAREST );
+      //GLES30.glTexParameteri ( GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_WRAP_S, GLES30.GL_CLAMP_TO_EDGE );
+      //GLES30.glTexParameteri ( GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_WRAP_T, GLES30.GL_CLAMP_TO_EDGE );
    }
 
    ///
    // Initialize the shader and program object
    //
-   public void onSurfaceCreated ( GL10 glUnused, EGLConfig config )
+   public void onSurfaceCreated (GL10 glUnused, EGLConfig config )
    {
       // Load shaders from 'assets' and get a linked program object
       mProgramObject = ESShader.loadProgramFromAsset ( mContext,
-                                                       "shaders/vertexShader.vert",
-                                                       "shaders/fragmentShader.frag" );
+         "shaders/vertexShader.vert",
+         "shaders/fragmentShader.frag");
 
       // Get the uniform locations
       mvpLoc = GLES30.glGetUniformLocation ( mProgramObject, "u_mvpMatrix" );
-      lightDirectionLoc = GLES30.glGetUniformLocation ( mProgramObject, "u_lightDirection" );
 
       // Get the sampler location
       samplerLoc = GLES30.glGetUniformLocation ( mProgramObject, "s_texture" );
 
       // Load the heightmap texture images from 'assets'
-      loadTextureFromAsset ( "textures/heightmap.png" );
+      loadTextureFromAsset ( "textures/worldtopo.png" );
 
-      // Generate the position and indices of a square grid for the base terrain
-      short gridSize = 200;
-      mSquareGrid.genSquareGrid (gridSize);
+      // Generate the position and indices of a globe
+      int numSlices = 20;
+      mGlobe.genSphere ( numSlices, 1.0f );
 
       // Initialize the VBO Ids
       mVBOIds[0] = 0;
       mVBOIds[1] = 1;
 
-      // Index buffer for base terrain
+      // Index buffer for globe
       IntBuffer indicesIBO = ByteBuffer.allocateDirect ( 4 ).order ( ByteOrder.nativeOrder() ).asIntBuffer();
       GLES30.glGenBuffers ( 1, indicesIBO );
       GLES30.glBindBuffer ( GL_ELEMENT_ARRAY_BUFFER, mVBOIds[0] );
-      GLES30.glBufferData ( GL_ELEMENT_ARRAY_BUFFER, mSquareGrid.getNumIndices() * 2, mSquareGrid.getIndices(), GL_STATIC_DRAW );
+      GLES30.glBufferData ( GL_ELEMENT_ARRAY_BUFFER, mGlobe.getNumIndices() * 2, mGlobe.getIndices(), GL_STATIC_DRAW );
       GLES30.glBindBuffer ( GL_ELEMENT_ARRAY_BUFFER, 0 );
 
-      // Position VBO for base terrain
+      // Position VBO for globe
       IntBuffer positionVBO = ByteBuffer.allocateDirect ( 4 ).order ( ByteOrder.nativeOrder() ).asIntBuffer();
       GLES30.glGenBuffers ( 1, positionVBO );
       GLES30.glBindBuffer ( GL_ARRAY_BUFFER, mVBOIds[1] );
-      GLES30.glBufferData ( GL_ARRAY_BUFFER, gridSize * gridSize * 4 * 3, mSquareGrid.getVertices(), GL_STATIC_DRAW );
+      GLES30.glBufferData ( GL_ARRAY_BUFFER, ( numSlices + 1 ) * ( numSlices + 1 ) * 4 * 3, mGlobe.getVertices(), GL_STATIC_DRAW );
 
       // Clear color
       GLES30.glClearColor( 1.0f, 1.0f, 1.0f, 0.0f );
@@ -118,33 +118,51 @@ public class TerrainRenderingRenderer implements GLSurfaceView.Renderer
 
    private void update()
    {
+      if ( mLastTime == 0 )
+      {
+         mLastTime = SystemClock.uptimeMillis();
+      }
+
+      long curTime = SystemClock.uptimeMillis();
+      long elapsedTime = curTime - mLastTime;
+      float deltaTime = elapsedTime / 10000.0f;
+      mLastTime = curTime;
+
       ESTransform perspective = new ESTransform();
       ESTransform modelview = new ESTransform();
       float aspect;
+
+      // Compute a rotation angle based on time to rotate the cube
+      mAngle += ( deltaTime * 40.0f );
+
+      if ( mAngle >= 360.0f )
+      {
+         mAngle -= 360.0f;
+      }
 
       // Compute the window aspect ratio
       aspect = ( float ) mWidth / ( float ) mHeight;
 
       // Generate a perspective matrix with a 60 degree FOV
       perspective.matrixLoadIdentity();
-      perspective.perspective ( 60.0f, aspect, 0.1f, 20.0f );
+      perspective.perspective ( 60.0f, aspect, 1.0f, 20.0f );
 
-      // Generate a model view matrix to rotate/translate the terrain
+      // Generate a model view matrix to rotate/translate the cube
       modelview.matrixLoadIdentity();
 
-      // Center the terrain
-      modelview.translate ( -0.5f, -0.5f, -0.7f );
+      // Translate away from the viewer
+      modelview.translate ( 0.0f, 0.0f, -2.0f );
 
-      // Rotate
-      modelview.rotate ( 45.0f, 1.0f, 0.0f, 0.0f );
+      // Rotate the cube
+      modelview.rotate ( mAngle, 0.0f, -1.0f, 0.0f );
 
       // Compute the final MVP by multiplying the
-      // modelview and perspective matrices together
+      // modevleiw and perspective matrices together
       mvpMatrix.matrixMultiply ( modelview.get(), perspective.get() );
    }
 
    ///
-   // Draw a flat grid
+   // Draw the globe
    //
    public void onDrawFrame ( GL10 glUnused )
    {
@@ -161,27 +179,26 @@ public class TerrainRenderingRenderer implements GLSurfaceView.Renderer
 
       // Load the vertex position
       GLES30.glBindBuffer ( GL_ARRAY_BUFFER, mVBOIds[1] );
-      GLES30.glVertexAttribPointer ( POSITION_LOC, 3, GLES30.GL_FLOAT, false, 3 * 4, 0 );
-      GLES30.glEnableVertexAttribArray ( POSITION_LOC );
+      GLES30.glVertexAttribPointer ( 0, 3, GLES30.GL_FLOAT, false, 3 * 4, 0 );
+      GLES30.glEnableVertexAttribArray ( 0 );
 
       // Bind the index buffer
       GLES30.glBindBuffer ( GL_ELEMENT_ARRAY_BUFFER, mVBOIds[0] );
+      GLES30.glVertexAttribPointer ( 1, 3, GLES30.GL_FLOAT, false, 0, 0 );
+      GLES30.glEnableVertexAttribArray ( 1 );
 
-      // Bind the height map
+      // Bind the texture
       GLES30.glActiveTexture ( GLES30.GL_TEXTURE0 );
-      GLES30.glBindTexture ( GLES30.GL_TEXTURE_2D, textureId[0] );
+      GLES30.glBindTexture ( GLES30.GL_TEXTURE_CUBE_MAP, textureId[0] );
 
       // Load the MVP matrix
       GLES30.glUniformMatrix4fv ( mvpLoc, 1, false, mvpMatrix.getAsFloatBuffer() );
 
-      // Load the light direction
-      GLES30.glUniform3f ( lightDirectionLoc, 0.86f, 0.14f, 0.49f );
-
-      // Set the height map sampler to texture unit to 0
+      // Set the texture sampler to texture unit to 0
       GLES30.glUniform1i ( samplerLoc, 0 );
 
-      // Draw the grid
-      GLES30.glDrawElements ( GLES30.GL_TRIANGLES, mSquareGrid.getNumIndices(), GLES30.GL_UNSIGNED_SHORT, mSquareGrid.getIndices() );
+      // Draw the globe
+      GLES30.glDrawElements ( GLES30.GL_TRIANGLES, mGlobe.getNumIndices(), GLES30.GL_UNSIGNED_SHORT, mGlobe.getIndices() );
    }
 
    ///
@@ -210,7 +227,10 @@ public class TerrainRenderingRenderer implements GLSurfaceView.Renderer
    private final int [] mVBOIds = new int[2];
 
    // Vertex data
-   private final ESShapes mSquareGrid = new ESShapes();
+   private ESShapes mGlobe = new ESShapes();
+
+   // Rotation angle
+   private float mAngle;
 
    // MVP matrix
    private final ESTransform mvpMatrix = new ESTransform();
@@ -219,6 +239,8 @@ public class TerrainRenderingRenderer implements GLSurfaceView.Renderer
    private int mWidth;
    private int mHeight;
 
-   final int POSITION_LOC = 0;
    private final Context mContext;
+
+   // Additional member variables
+   private long mLastTime = 0;
 }
