@@ -126,6 +126,7 @@ public class SimpleTexture2DRenderer implements GLSurfaceView.Renderer
       GLES30.glVertexAttribPointer ( 0, 3, GLES30.GL_FLOAT,
          false,
          5 * 4, mVertices );
+
       // Load the texture coordinate
       mVertices.position ( 3 );
       GLES30.glVertexAttribPointer ( 1, 2, GLES30.GL_FLOAT,

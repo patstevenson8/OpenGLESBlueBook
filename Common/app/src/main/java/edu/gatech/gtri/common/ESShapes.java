@@ -55,8 +55,7 @@ public class ESShapes
 
                 int texIndex = ( i * ( numSlices + 1 ) + j ) * 2;
                 mTexCoords.put ( texIndex + 0, ( float ) j / ( float ) numSlices );
-                mTexCoords.put ( texIndex + 1, ( 1.0f - ( float ) i )
-                        / ( float ) ( numParallels - 1 ) );
+                mTexCoords.put ( texIndex + 1, ( 1.0f - ( float ) i ) / ( float ) ( numParallels - 1 ) );
             }
         }
 
