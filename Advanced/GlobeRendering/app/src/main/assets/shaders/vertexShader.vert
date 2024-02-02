@@ -2,10 +2,10 @@
 
 uniform mat4 u_mvpMatrix;
 layout(location = 0) in vec4 a_position;
-layout(location = 1) in vec3 a_normal;
-out vec3 v_normal;
+layout(location = 1) in vec2 a_texCoord;
+out vec2 v_texCoord;
 void main()
 {
-  v_normal = a_normal;
   gl_Position = u_mvpMatrix * a_position;
+  v_texCoord = a_texCoord;
 }

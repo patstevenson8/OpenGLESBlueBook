@@ -60,16 +60,13 @@ public class GlobeRenderingRenderer implements GLSurfaceView.Renderer
 
       bitmap = BitmapFactory.decodeStream ( is );
 
-      IntBuffer textureIBO = ByteBuffer.allocateDirect ( 4 ).order ( ByteOrder.nativeOrder() ).asIntBuffer();
-      GLES30.glGenTextures ( 1, textureIBO );
-      GLES30.glBindTexture ( GLES30.GL_TEXTURE_CUBE_MAP, textureId[0] );
+      GLES30.glGenTextures ( 1, textureId, 0 );
+      GLES30.glBindTexture ( GLES30.GL_TEXTURE_2D, textureId[0] );
 
-      GLUtils.texImage2D ( GLES30.GL_TEXTURE_CUBE_MAP, 0, bitmap, 0 );
+      GLUtils.texImage2D ( GLES30.GL_TEXTURE_2D, 0, bitmap, 0 );
 
-      GLES30.glTexParameteri ( GLES30.GL_TEXTURE_CUBE_MAP, GLES30.GL_TEXTURE_MIN_FILTER, GLES30.GL_NEAREST );
-      GLES30.glTexParameteri ( GLES30.GL_TEXTURE_CUBE_MAP, GLES30.GL_TEXTURE_MAG_FILTER, GLES30.GL_NEAREST );
-      //GLES30.glTexParameteri ( GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_WRAP_S, GLES30.GL_CLAMP_TO_EDGE );
-      //GLES30.glTexParameteri ( GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_WRAP_T, GLES30.GL_CLAMP_TO_EDGE );
+      GLES30.glTexParameteri ( GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MIN_FILTER, GLES30.GL_LINEAR );
+      GLES30.glTexParameteri ( GLES30.GL_TEXTURE_2D, GLES30.GL_TEXTURE_MAG_FILTER, GLES30.GL_LINEAR );
    }
 
    ///
@@ -89,28 +86,11 @@ public class GlobeRenderingRenderer implements GLSurfaceView.Renderer
       samplerLoc = GLES30.glGetUniformLocation ( mProgramObject, "s_texture" );
 
       // Load the heightmap texture images from 'assets'
-      loadTextureFromAsset ( "textures/worldtopo.png" );
+      loadTextureFromAsset ( "textures/worldtopo1024x1024.png" );
 
       // Generate the position and indices of a globe
-      int numSlices = 20;
-      mGlobe.genSphere ( numSlices, 1.0f );
-
-      // Initialize the VBO Ids
-      mVBOIds[0] = 0;
-      mVBOIds[1] = 1;
-
-      // Index buffer for globe
-      IntBuffer indicesIBO = ByteBuffer.allocateDirect ( 4 ).order ( ByteOrder.nativeOrder() ).asIntBuffer();
-      GLES30.glGenBuffers ( 1, indicesIBO );
-      GLES30.glBindBuffer ( GL_ELEMENT_ARRAY_BUFFER, mVBOIds[0] );
-      GLES30.glBufferData ( GL_ELEMENT_ARRAY_BUFFER, mGlobe.getNumIndices() * 2, mGlobe.getIndices(), GL_STATIC_DRAW );
-      GLES30.glBindBuffer ( GL_ELEMENT_ARRAY_BUFFER, 0 );
-
-      // Position VBO for globe
-      IntBuffer positionVBO = ByteBuffer.allocateDirect ( 4 ).order ( ByteOrder.nativeOrder() ).asIntBuffer();
-      GLES30.glGenBuffers ( 1, positionVBO );
-      GLES30.glBindBuffer ( GL_ARRAY_BUFFER, mVBOIds[1] );
-      GLES30.glBufferData ( GL_ARRAY_BUFFER, ( numSlices + 1 ) * ( numSlices + 1 ) * 4 * 3, mGlobe.getVertices(), GL_STATIC_DRAW );
+      // Earth radius 6378 km
+      mGlobe.genSphere ( 250, 6378.0f );
 
       // Clear color
       GLES30.glClearColor( 1.0f, 1.0f, 1.0f, 0.0f );
@@ -125,7 +105,7 @@ public class GlobeRenderingRenderer implements GLSurfaceView.Renderer
 
       long curTime = SystemClock.uptimeMillis();
       long elapsedTime = curTime - mLastTime;
-      float deltaTime = elapsedTime / 10000.0f;
+      float deltaTime = elapsedTime / 2000.0f;
       mLastTime = curTime;
 
       ESTransform perspective = new ESTransform();
@@ -145,13 +125,13 @@ public class GlobeRenderingRenderer implements GLSurfaceView.Renderer
 
       // Generate a perspective matrix with a 60 degree FOV
       perspective.matrixLoadIdentity();
-      perspective.perspective ( 60.0f, aspect, 1.0f, 20.0f );
+      perspective.perspective ( 60.0f, aspect, 1.0f, 12756.0f );
 
       // Generate a model view matrix to rotate/translate the cube
       modelview.matrixLoadIdentity();
 
       // Translate away from the viewer
-      modelview.translate ( 0.0f, 0.0f, -2.0f );
+      modelview.translate ( 0.0f, 0.0f, -12756.0f );
 
       // Rotate the cube
       modelview.rotate ( mAngle, 0.0f, -1.0f, 0.0f );
@@ -174,22 +154,23 @@ public class GlobeRenderingRenderer implements GLSurfaceView.Renderer
       // Clear the color buffer
       GLES30.glClear ( GLES30.GL_COLOR_BUFFER_BIT );
 
+      GLES30.glCullFace ( GLES30.GL_FRONT );
+      GLES30.glEnable ( GLES30.GL_CULL_FACE );
+
       // Use the program object
       GLES30.glUseProgram ( mProgramObject );
 
       // Load the vertex position
-      GLES30.glBindBuffer ( GL_ARRAY_BUFFER, mVBOIds[1] );
-      GLES30.glVertexAttribPointer ( 0, 3, GLES30.GL_FLOAT, false, 3 * 4, 0 );
+      GLES30.glVertexAttribPointer ( 0, 3, GLES30.GL_FLOAT, false, 0, mGlobe.getVertices() );
       GLES30.glEnableVertexAttribArray ( 0 );
 
-      // Bind the index buffer
-      GLES30.glBindBuffer ( GL_ELEMENT_ARRAY_BUFFER, mVBOIds[0] );
-      GLES30.glVertexAttribPointer ( 1, 3, GLES30.GL_FLOAT, false, 0, 0 );
+      // Load the texture coordinate
+      GLES30.glVertexAttribPointer ( 1, 2, GLES30.GL_FLOAT, false, 0, mGlobe.getTexCoords() );
       GLES30.glEnableVertexAttribArray ( 1 );
 
       // Bind the texture
       GLES30.glActiveTexture ( GLES30.GL_TEXTURE0 );
-      GLES30.glBindTexture ( GLES30.GL_TEXTURE_CUBE_MAP, textureId[0] );
+      GLES30.glBindTexture ( GLES30.GL_TEXTURE_2D, textureId[0] );
 
       // Load the MVP matrix
       GLES30.glUniformMatrix4fv ( mvpLoc, 1, false, mvpMatrix.getAsFloatBuffer() );
