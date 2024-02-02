@@ -1,14 +1,8 @@
 #version 300 es
 
-// Fragment Shader for MultiTexture
-//
-
-precision mediump float;                
-
-in vec2 v_texCoord;                     
-
-layout(location = 0) out vec4 outColor;                     
-
+precision mediump float;
+in vec2 v_texCoord;
+layout(location = 0) out vec4 outColor;
 uniform sampler2D s_baseMap;            
 uniform sampler2D s_lightMap;           
 

@@ -126,8 +126,7 @@ public class SimpleVertexShaderRenderer implements GLSurfaceView.Renderer
       GLES30.glUseProgram ( mProgramObject );
 
       // Load the vertex data
-      GLES30.glVertexAttribPointer ( 0, 3, GLES30.GL_FLOAT, false,
-         0, mCube.getVertices() );
+      GLES30.glVertexAttribPointer ( 0, 3, GLES30.GL_FLOAT, false, 0, mCube.getVertices() );
       GLES30.glEnableVertexAttribArray ( 0 );
 
       // Set the vertex color to red

@@ -94,7 +94,7 @@ public class MultiTextureRenderer implements GLSurfaceView.Renderer
       GLES30.glClearColor ( 1.0f, 1.0f, 1.0f, 0.0f );
    }
 
-   // /
+   ///
    // Draw a triangle using the shader pair created in onSurfaceCreated()
    //
    public void onDrawFrame ( GL10 glUnused )
@@ -110,19 +110,14 @@ public class MultiTextureRenderer implements GLSurfaceView.Renderer
 
       // Load the vertex position
       mVertices.position ( 0 );
-      GLES30.glVertexAttribPointer ( 0, 3, GLES30.GL_FLOAT,
-         false,
-         5 * 4, mVertices );
+      GLES30.glVertexAttribPointer ( 0, 3, GLES30.GL_FLOAT, false, 5 * 4, mVertices );
+
       // Load the texture coordinate
       mVertices.position ( 3 );
-      GLES30.glVertexAttribPointer ( 1, 2, GLES30.GL_FLOAT,
-         false,
-         5 * 4,
-         mVertices );
+      GLES30.glVertexAttribPointer ( 1, 2, GLES30.GL_FLOAT, false, 5 * 4, mVertices );
 
       GLES30.glEnableVertexAttribArray ( 0 );
       GLES30.glEnableVertexAttribArray ( 1 );
-
 
       // Bind the base map
       GLES30.glActiveTexture ( GLES30.GL_TEXTURE0 );
