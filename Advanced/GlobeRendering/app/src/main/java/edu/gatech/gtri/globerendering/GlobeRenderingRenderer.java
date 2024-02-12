@@ -1,9 +1,5 @@
 package edu.gatech.gtri.globerendering;
 
-import static javax.microedition.khronos.opengles.GL11.GL_ARRAY_BUFFER;
-import static javax.microedition.khronos.opengles.GL11.GL_ELEMENT_ARRAY_BUFFER;
-import static javax.microedition.khronos.opengles.GL11.GL_STATIC_DRAW;
-
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -14,9 +10,6 @@ import android.os.SystemClock;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.IntBuffer;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -38,7 +31,7 @@ public class GlobeRenderingRenderer implements GLSurfaceView.Renderer
    ///
    //  Load texture from asset
    //
-   private void loadTextureFromAsset ( String fileName )
+   private void loadTextureFromAsset ( )
    {
       textureId[0] = 0;
       Bitmap bitmap;
@@ -46,7 +39,7 @@ public class GlobeRenderingRenderer implements GLSurfaceView.Renderer
 
       try
       {
-         is = mContext.getAssets().open ( fileName );
+         is = mContext.getAssets().open ("textures/worldtopo1024x1024.png");
       }
       catch ( IOException ioe )
       {
@@ -86,7 +79,7 @@ public class GlobeRenderingRenderer implements GLSurfaceView.Renderer
       samplerLoc = GLES30.glGetUniformLocation ( mProgramObject, "s_texture" );
 
       // Load the heightmap texture images from 'assets'
-      loadTextureFromAsset ( "textures/worldtopo1024x1024.png" );
+      loadTextureFromAsset ();
 
       // Generate the position and indices of a globe
       // Earth radius 6378 km
@@ -196,7 +189,6 @@ public class GlobeRenderingRenderer implements GLSurfaceView.Renderer
 
    // Uniform locations
    private int mvpLoc;
-   private int lightDirectionLoc;
 
    // Sampler location
    private int samplerLoc;
@@ -204,11 +196,8 @@ public class GlobeRenderingRenderer implements GLSurfaceView.Renderer
    // Texture handle
    private final int [] textureId = new int[1];
 
-   // VertexBufferObject Ids
-   private final int [] mVBOIds = new int[2];
-
    // Vertex data
-   private ESShapes mGlobe = new ESShapes();
+   private final ESShapes mGlobe = new ESShapes();
 
    // Rotation angle
    private float mAngle;
