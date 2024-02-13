@@ -11,8 +11,6 @@ import android.util.Log;
 
 public class Noise3D extends AppCompatActivity
 {
-   private final int CONTEXT_CLIENT_VERSION = 3;
-
    @Override
    protected void onCreate ( Bundle savedInstanceState )
    {
@@ -23,7 +21,8 @@ public class Noise3D extends AppCompatActivity
       {
          // Tell the surface view we want to create an OpenGL ES 3.0-compatible
          // context, and set an OpenGL ES 3.0-compatible renderer.
-         mGLSurfaceView.setEGLContextClientVersion ( CONTEXT_CLIENT_VERSION );
+         int CONTEXT_CLIENT_VERSION = 3;
+         mGLSurfaceView.setEGLContextClientVersion (CONTEXT_CLIENT_VERSION);
          mGLSurfaceView.setRenderer ( new Noise3DRenderer ( this ) );
       }
       else

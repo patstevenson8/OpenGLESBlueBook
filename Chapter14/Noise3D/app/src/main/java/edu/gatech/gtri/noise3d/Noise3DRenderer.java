@@ -1,24 +1,13 @@
 package edu.gatech.gtri.noise3d;
 
-import static javax.microedition.khronos.opengles.GL11.GL_ARRAY_BUFFER;
-import static javax.microedition.khronos.opengles.GL11.GL_ELEMENT_ARRAY_BUFFER;
-import static javax.microedition.khronos.opengles.GL11.GL_STATIC_DRAW;
-
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.opengl.GLES30;
 import android.opengl.GLSurfaceView;
-import android.opengl.GLUtils;
 import android.os.SystemClock;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
 import java.nio.ShortBuffer;
 import java.util.Random;
 
@@ -43,7 +32,7 @@ public class Noise3DRenderer implements GLSurfaceView.Renderer
    {
       int            i;
       float          a;
-      float          x, y, z, r, theta;
+      float          x, y, z, r;
       float []       gradients = new float[256 * 3];
 
       Random rand = new Random();
@@ -60,7 +49,6 @@ public class Noise3DRenderer implements GLSurfaceView.Renderer
          r = (float) (Math.sqrt ( 1.0f - z * z )); // r is radius of circle
 
          a = ( rand.nextFloat() % 32768 ) / 32768.0f;
-         theta = ( 2.0f * ( float ) Math.PI * a );
          x = ( r * (float) (Math.cos ( a )) );
          y = ( r * (float) (Math.sin ( a )) );
 
@@ -104,7 +92,9 @@ public class Noise3DRenderer implements GLSurfaceView.Renderer
       y = permTable[ ( iy + z ) & NOISE_TABLE_MASK];
       indx = ( ix + y ) & NOISE_TABLE_MASK;
 
-      return ( gradientTable[indx * 3 + 0] * fx + gradientTable[indx * 3 + 1] * fy + gradientTable[indx * 3 + 2] * fz );
+      return ( gradientTable[indx * 3    ] * fx +
+               gradientTable[indx * 3 + 1] * fy +
+               gradientTable[indx * 3 + 2] * fz );
    }
 
    float lerp(float t, float a, float b)
@@ -163,7 +153,7 @@ public class Noise3DRenderer implements GLSurfaceView.Renderer
       int textureSize = 64; // Size of the 3D nosie texture
       float frequency = 5.0f; // Frequency of the noise.
       float [] texBuf = new float [ 4 * textureSize * textureSize * textureSize ];
-      ShortBuffer texBufUbyte = ByteBuffer.allocateDirect ( 2 * textureSize * textureSize * textureSize ).order ( ByteOrder.nativeOrder() ).asShortBuffer();;
+      ShortBuffer texBufUbyte = ByteBuffer.allocateDirect ( 2 * textureSize * textureSize * textureSize ).order ( ByteOrder.nativeOrder() ).asShortBuffer();
       int x, y, z;
       int index = 0;
       float min = 1000;
@@ -348,7 +338,7 @@ public class Noise3DRenderer implements GLSurfaceView.Renderer
       // Load other uniforms
       {
          float [] fogColor = new float[] { 1.0f, 1.0f, 1.0f, 1.0f };
-         FloatBuffer fogColorBuffer = ByteBuffer.allocateDirect ( 1 * 4 * 4 ).order ( ByteOrder.nativeOrder() ).asFloatBuffer();
+         FloatBuffer fogColorBuffer = ByteBuffer.allocateDirect ( 4 * 4 ).order ( ByteOrder.nativeOrder() ).asFloatBuffer();
          fogColorBuffer.put ( fogColor ).position ( 0 );
          float fogMinDist = 2.75f;
          float fogMaxDist = 4.0f;
@@ -391,9 +381,6 @@ public class Noise3DRenderer implements GLSurfaceView.Renderer
    // Texture handle
    private final int [] textureId = new int[1];
 
-   // VertexBufferObject Ids
-   private final int [] mVBOIds = new int[2];
-
    // Vertex data
    private final ESShapes mCube = new ESShapes();
 
@@ -408,12 +395,12 @@ public class Noise3DRenderer implements GLSurfaceView.Renderer
    private final ESTransform mvMatrix = new ESTransform();
 
    // lattice gradients 3D noise
-   private float [] gradientTable = new float[256 * 3];
+   private final float [] gradientTable = new float[256 * 3];
 
    // permTable describes a random permutatin of 8-bit values from 0 to 255.
-   private short [] permTable = new short[]
-   {
-      0xE1, 0x9B, 0xD2, 0x6C, 0xAF, 0xC7, 0xDD, 0x90, 0xCB, 0x74, 0x46, 0xD5, 0x45, 0x9E, 0x21, 0xFC,
+   private final short [] permTable = new short[]
+      {
+         0xE1, 0x9B, 0xD2, 0x6C, 0xAF, 0xC7, 0xDD, 0x90, 0xCB, 0x74, 0x46, 0xD5, 0x45, 0x9E, 0x21, 0xFC,
          0x05, 0x52, 0xAD, 0x85, 0xDE, 0x8B, 0xAE, 0x1B, 0x09, 0x47, 0x5A, 0xF6, 0x4B, 0x82, 0x5B, 0xBF,
          0xA9, 0x8A, 0x02, 0x97, 0xC2, 0xEB, 0x51, 0x07, 0x19, 0x71, 0xE4, 0x9F, 0xCD, 0xFD, 0x86, 0x8E,
          0xF8, 0x41, 0xE0, 0xD9, 0x16, 0x79, 0xE5, 0x3F, 0x59, 0x67, 0x60, 0x68, 0x9C, 0x11, 0xC9, 0x81,
@@ -429,7 +416,7 @@ public class Noise3DRenderer implements GLSurfaceView.Renderer
          0xEC, 0xE8, 0x78, 0x15, 0xE9, 0xD1, 0x2D, 0x62, 0xC1, 0x72, 0x4E, 0x13, 0xCE, 0x0E, 0x76, 0x7F,
          0x30, 0x4F, 0x93, 0x55, 0x1E, 0xCF, 0xDB, 0x36, 0x58, 0xEA, 0xBE, 0x7A, 0x5F, 0x43, 0x8F, 0x6D,
          0x89, 0xD6, 0x91, 0x5D, 0x5C, 0x64, 0xF5, 0x00, 0xD8, 0xBA, 0x3C, 0x53, 0x69, 0x61, 0xCC, 0x34,
-   };
+      };
 
    // Additional member variables
    private int mWidth;
