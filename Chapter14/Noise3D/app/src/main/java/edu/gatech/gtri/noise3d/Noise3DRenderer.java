@@ -284,13 +284,13 @@ public class Noise3DRenderer implements GLSurfaceView.Renderer
 
       // Generate a perspective matrix with a 60 degree FOV
       perspective.matrixLoadIdentity();
-      perspective.perspective ( 60.0f, aspect, 0.1f, 20.0f );
+      perspective.perspective ( 60.0f, aspect, 1.0f, 20.0f );
 
       // Generate a model view matrix to rotate/translate the terrain
       mvMatrix.matrixLoadIdentity();
 
       // Center the cube
-      mvMatrix.translate ( 0.0f, -0.5f, -4.5f );
+      mvMatrix.translate ( 0.0f, 0.0f, -4.5f );
 
       // Rotate
       mvMatrix.rotate ( mAngle, 1.0f, 0.0f, 1.0f );
@@ -327,10 +327,6 @@ public class Noise3DRenderer implements GLSurfaceView.Renderer
       GLES30.glVertexAttribPointer ( ATTRIB_LOCATION_TEXCOORD, 2, GLES30.GL_FLOAT, false, 0, mCube.getTexCoords() );
       GLES30.glEnableVertexAttribArray ( ATTRIB_LOCATION_TEXCOORD );
 
-      // Bind the texture
-      GLES30.glActiveTexture ( GLES30.GL_TEXTURE0 );
-      GLES30.glBindTexture ( GLES30.GL_TEXTURE_2D, textureId[0] );
-
       // Load the matrices
       GLES30.glUniformMatrix4fv ( mvpLoc, 1, false, mvpMatrix.getAsFloatBuffer() );
       GLES30.glUniformMatrix4fv ( mvLoc, 1, false, mvMatrix.getAsFloatBuffer() );
@@ -341,7 +337,7 @@ public class Noise3DRenderer implements GLSurfaceView.Renderer
          FloatBuffer fogColorBuffer = ByteBuffer.allocateDirect ( 4 * 4 ).order ( ByteOrder.nativeOrder() ).asFloatBuffer();
          fogColorBuffer.put ( fogColor ).position ( 0 );
          float fogMinDist = 2.75f;
-         float fogMaxDist = 4.0f;
+         float fogMaxDist = 5.5f;
          GLES30.glUniform1f ( fogMinDistLoc, fogMinDist );
          GLES30.glUniform1f ( fogMaxDistLoc, fogMaxDist );
 
