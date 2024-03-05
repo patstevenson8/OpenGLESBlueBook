@@ -1,6 +1,7 @@
 package edu.gatech.gtri.geomipmap;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.widget.ConstraintLayout;
 
 import android.app.ActivityManager;
 import android.content.Context;
@@ -8,31 +9,36 @@ import android.content.pm.ConfigurationInfo;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.LinearLayout;
 
 public class GeoMipMap extends AppCompatActivity
 {
-    private final int CONTEXT_CLIENT_VERSION = 3;
-
     @Override
     protected void onCreate ( Bundle savedInstanceState )
     {
         super.onCreate ( savedInstanceState );
-        mGLSurfaceView = new GLSurfaceView( this );
 
+        // Check for support of OpenGL ES 3.0
+        // If not supported, exit
         if ( detectOpenGLES30() )
         {
-            // Tell the surface view we want to create an OpenGL ES 3.0-compatible
-            // context, and set an OpenGL ES 3.0-compatible renderer.
-            mGLSurfaceView.setEGLContextClientVersion ( CONTEXT_CLIENT_VERSION );
-            mGLSurfaceView.setRenderer ( new GeoMipMapRenderer ( this ) );
+            // Set the main content with the full set of resources
+            setContentView(R.layout.activity_main);
+
+            // The LinearLayout is used to hold the GL view
+            glView = (ConstraintLayout)findViewById(R.id.glView);
+
+            // Create a GLSurfaceView instance
+            mGLSurfaceView = new GeoMipMapView(this);
+
+            // Now add the GLSurfaceView to the layout component
+            glView.addView(mGLSurfaceView, 0);
         }
         else
         {
             Log.e ( "GeoMipMap", "OpenGL ES 3.0 not supported on device.  Exiting..." );
             finish();
         }
-
-        setContentView ( mGLSurfaceView );
     }
 
     private boolean detectOpenGLES30()
@@ -61,5 +67,6 @@ public class GeoMipMap extends AppCompatActivity
         mGLSurfaceView.onPause();
     }
 
-    private GLSurfaceView mGLSurfaceView;
+    private ConstraintLayout glView;
+    private GeoMipMapView mGLSurfaceView;
 }

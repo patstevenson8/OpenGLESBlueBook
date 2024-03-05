@@ -199,8 +199,8 @@ public class BoxOfCubesRenderer implements GLSurfaceView.Renderer
    private int mMVPLoc;
 
    // Vertex data
-   private int xLength = 64;
-   private int yLength = 64;
+   private int xLength = 32;
+   private int yLength = 32;
    private int zLength = 16;
    private ESShapes mCube = new ESShapes();
    private ESShapes [] mCubes = new ESShapes[ xLength * yLength * zLength ];
