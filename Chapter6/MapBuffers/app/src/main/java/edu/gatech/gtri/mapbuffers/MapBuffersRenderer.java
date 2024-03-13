@@ -91,8 +91,7 @@ public class MapBuffersRenderer implements GLSurfaceView.Renderer
             GLES30.glGenBuffers ( 2, mVBOIds, 0 );
 
             GLES30.glBindBuffer ( GLES30.GL_ARRAY_BUFFER, mVBOIds[0] );
-            GLES30.glBufferData ( GLES30.GL_ARRAY_BUFFER, vtxStride * numVertices,
-                    null, GLES30.GL_STATIC_DRAW );
+            GLES30.glBufferData ( GLES30.GL_ARRAY_BUFFER, vtxStride * numVertices, null, GLES30.GL_STATIC_DRAW );
             vtxMappedBuf =
                     ( ( ByteBuffer ) GLES30.glMapBufferRange (
                             GLES30.GL_ARRAY_BUFFER, 0, vtxStride * numVertices,
@@ -107,8 +106,7 @@ public class MapBuffersRenderer implements GLSurfaceView.Renderer
 
             // Map the index buffer
             GLES30.glBindBuffer ( GLES30.GL_ELEMENT_ARRAY_BUFFER, mVBOIds[1] );
-            GLES30.glBufferData ( GLES30.GL_ELEMENT_ARRAY_BUFFER, 2 * numIndices,
-                    null, GLES30.GL_STATIC_DRAW );
+            GLES30.glBufferData ( GLES30.GL_ELEMENT_ARRAY_BUFFER, 2 * numIndices, null, GLES30.GL_STATIC_DRAW );
             idxMappedBuf =
                     ( ( ByteBuffer ) GLES30.glMapBufferRange (
                             GLES30.GL_ELEMENT_ARRAY_BUFFER, 0, 2 * numIndices,
@@ -129,16 +127,13 @@ public class MapBuffersRenderer implements GLSurfaceView.Renderer
         GLES30.glEnableVertexAttribArray ( VERTEX_POS_INDX );
         GLES30.glEnableVertexAttribArray ( VERTEX_COLOR_INDX );
 
-        GLES30.glVertexAttribPointer ( VERTEX_POS_INDX, VERTEX_POS_SIZE,
-                GLES30.GL_FLOAT, false, vtxStride, offset );
+        GLES30.glVertexAttribPointer ( VERTEX_POS_INDX, VERTEX_POS_SIZE, GLES30.GL_FLOAT, false, vtxStride, offset );
 
         offset += ( VERTEX_POS_SIZE * 4 );
 
-        GLES30.glVertexAttribPointer ( VERTEX_COLOR_INDX, VERTEX_COLOR_SIZE,
-                GLES30.GL_FLOAT, false, vtxStride, offset );
+        GLES30.glVertexAttribPointer ( VERTEX_COLOR_INDX, VERTEX_COLOR_SIZE, GLES30.GL_FLOAT, false, vtxStride, offset );
 
-        GLES30.glDrawElements ( GLES30.GL_TRIANGLES, numIndices,
-                GLES30.GL_UNSIGNED_SHORT, 0 );
+        GLES30.glDrawElements ( GLES30.GL_TRIANGLES, numIndices, GLES30.GL_UNSIGNED_SHORT, 0 );
 
         GLES30.glDisableVertexAttribArray ( VERTEX_POS_INDX );
         GLES30.glDisableVertexAttribArray ( VERTEX_COLOR_INDX );

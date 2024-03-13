@@ -114,7 +114,7 @@ public class GeoMipMapRenderer implements GLSurfaceView.Renderer
     public void onSurfaceChanged (GL10 glUnused, int width, int height )
     {
         // Adjust the viewport based on geometry changes, such as screen rotation
-        GLES20.glViewport(0, 0, width, height);
+        GLES30.glViewport(0, 0, width, height);
         float ratio = (float) width / height;
 
         // Produce the perspective projection
@@ -397,11 +397,6 @@ public class GeoMipMapRenderer implements GLSurfaceView.Renderer
 
     // Vertex data
     private ESShapes mCube = new ESShapes();
-
-    // Rotation angle
-    private float mAngleX = 45.0f;
-    private float mAngleY = 0.0f;
-    private float mAngleZ = 0.0f;
 
     // Additional Member variables
     private float mViewportWidth = 1.0f;
