@@ -1,11 +1,9 @@
 package edu.gatech.gtri.common;
 
 import java.lang.Math;
-import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
 import java.nio.ShortBuffer;
 
 public class ESShapes
@@ -20,14 +18,10 @@ public class ESShapes
         float angleStep = ( ( 2.0f * ( float ) Math.PI ) / numSlices );
 
         // Allocate memory for buffers
-        mVertices = ByteBuffer.allocateDirect ( numVertices * 3 * 4 )
-                .order ( ByteOrder.nativeOrder() ).asFloatBuffer();
-        mNormals = ByteBuffer.allocateDirect ( numVertices * 3 * 4 )
-                .order ( ByteOrder.nativeOrder() ).asFloatBuffer();
-        mTexCoords = ByteBuffer.allocateDirect ( numVertices * 2 * 4 )
-                .order ( ByteOrder.nativeOrder() ).asFloatBuffer();
-        mIndices = ByteBuffer.allocateDirect ( numIndices * 2 )
-                .order ( ByteOrder.nativeOrder() ).asShortBuffer();
+        mVertices = ByteBuffer.allocateDirect ( numVertices * NUM_VERTICES_TRIANGLE * Float.BYTES ).order ( ByteOrder.nativeOrder() ).asFloatBuffer();
+        mNormals = ByteBuffer.allocateDirect ( numVertices * NUM_NORMALS_TRIANGLE * Float.BYTES ).order ( ByteOrder.nativeOrder() ).asFloatBuffer();
+        mTexCoords = ByteBuffer.allocateDirect ( numVertices * NUM_COORDS_TEX_2D * Float.BYTES ).order ( ByteOrder.nativeOrder() ).asFloatBuffer();
+        mIndices = ByteBuffer.allocateDirect ( numIndices * Short.BYTES ).order ( ByteOrder.nativeOrder() ).asShortBuffer();
 
         for ( i = 0; i < numParallels + 1; i++ )
         {
@@ -35,19 +29,9 @@ public class ESShapes
             {
                 int vertex = ( i * ( numSlices + 1 ) + j ) * 3;
 
-                mVertices
-                        .put ( vertex + 0,
-                                ( float ) ( radius
-                                        * Math.sin ( angleStep * ( float ) i ) * Math
-                                        .sin ( angleStep * ( float ) j ) ) );
-
-                mVertices.put ( vertex + 1,
-                        ( float ) ( radius * Math.cos ( angleStep * ( float ) i ) ) );
-                mVertices
-                        .put ( vertex + 2,
-                                ( float ) ( radius
-                                        * Math.sin ( angleStep * ( float ) i ) * Math
-                                        .cos ( angleStep * ( float ) j ) ) );
+                mVertices.put ( vertex + 0, ( float ) ( radius * Math.sin ( angleStep * ( float ) i ) * Math.sin ( angleStep * ( float ) j ) ) );
+                mVertices.put ( vertex + 1, ( float ) ( radius * Math.cos ( angleStep * ( float ) i ) ) );
+                mVertices.put ( vertex + 2, ( float ) ( radius * Math.sin ( angleStep * ( float ) i ) * Math.cos ( angleStep * ( float ) j ) ) );
 
                 mNormals.put ( vertex + 0, mVertices.get ( vertex + 0 ) / radius );
                 mNormals.put ( vertex + 1, mVertices.get ( vertex + 1 ) / radius );
@@ -65,15 +49,13 @@ public class ESShapes
         {
             for ( j = 0; j < numSlices; j++ )
             {
-                mIndices.put ( index++, ( short ) ( i * ( numSlices + 1 ) + j ) );
+                mIndices.put ( index++, ( short ) (   i       * ( numSlices + 1 ) + j ) );
                 mIndices.put ( index++, ( short ) ( ( i + 1 ) * ( numSlices + 1 ) + j ) );
-                mIndices.put ( index++,
-                        ( short ) ( ( i + 1 ) * ( numSlices + 1 ) + ( j + 1 ) ) );
+                mIndices.put ( index++, ( short ) ( ( i + 1 ) * ( numSlices + 1 ) + ( j + 1 ) ) );
 
-                mIndices.put ( index++, ( short ) ( i * ( numSlices + 1 ) + j ) );
-                mIndices.put ( index++,
-                        ( short ) ( ( i + 1 ) * ( numSlices + 1 ) + ( j + 1 ) ) );
-                mIndices.put ( index++, ( short ) ( i * ( numSlices + 1 ) + ( j + 1 ) ) );
+                mIndices.put ( index++, ( short ) (   i       * ( numSlices + 1 ) + j ) );
+                mIndices.put ( index++, ( short ) ( ( i + 1 ) * ( numSlices + 1 ) + ( j + 1 ) ) );
+                mIndices.put ( index++, ( short ) (   i       * ( numSlices + 1 ) + ( j + 1 ) ) );
 
             }
         }
@@ -89,43 +71,42 @@ public class ESShapes
         int numVertices = 24;
         int numIndices = 36;
 
-        float[] cubeVerts = { -0.5f, -0.5f, -0.5f, -0.5f, -0.5f,  0.5f,
-                               0.5f, -0.5f,  0.5f,  0.5f, -0.5f, -0.5f,
-                              -0.5f,  0.5f, -0.5f, -0.5f,  0.5f, 0.5f,
+        float[] cubeVerts = {
+           -0.5f, -0.5f, -0.5f, -0.5f, -0.5f,  0.5f,
+           0.5f, -0.5f,  0.5f,  0.5f, -0.5f, -0.5f,
+           -0.5f,  0.5f, -0.5f, -0.5f,  0.5f, 0.5f,
            0.5f, 0.5f, 0.5f, 0.5f, 0.5f, -0.5f, -0.5f, -0.5f,
-                -0.5f, -0.5f, 0.5f, -0.5f, 0.5f, 0.5f, -0.5f, 0.5f, -0.5f,
-                -0.5f, -0.5f, -0.5f, 0.5f, -0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f,
-                0.5f, -0.5f, 0.5f, -0.5f, -0.5f, -0.5f, -0.5f, -0.5f, 0.5f,
-                -0.5f, 0.5f, 0.5f, -0.5f, 0.5f, -0.5f, 0.5f, -0.5f, -0.5f,
-                0.5f, -0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, -0.5f,
+           -0.5f, -0.5f, 0.5f, -0.5f, 0.5f, 0.5f, -0.5f, 0.5f, -0.5f,
+           -0.5f, -0.5f, -0.5f, 0.5f, -0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f,
+           0.5f, -0.5f, 0.5f, -0.5f, -0.5f, -0.5f, -0.5f, -0.5f, 0.5f,
+           -0.5f, 0.5f, 0.5f, -0.5f, 0.5f, -0.5f, 0.5f, -0.5f, -0.5f,
+           0.5f, -0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, -0.5f,
         };
 
-        float[] cubeNormals = { 0.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f,
-                -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
-                0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, -1.0f,
-                0.0f, 0.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f,
-                0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
-                1.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f,
-                -1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
-                0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
+        float[] cubeNormals = {
+           0.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f,
+           -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+           0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, -1.0f,
+           0.0f, 0.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f,
+           0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
+           1.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f,
+           -1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+           0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
         };
 
-        float[] cubeTex = { 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
-                1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f,
-                0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
-                1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f,
-                1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
+        float[] cubeTex = {
+           0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
+           1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+           0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+           1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f,
+           1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
         };
 
         // Allocate memory for buffers
-        mVertices = ByteBuffer.allocateDirect ( numVertices * 3 * 4 )
-                .order ( ByteOrder.nativeOrder() ).asFloatBuffer();
-        mNormals = ByteBuffer.allocateDirect ( numVertices * 3 * 4 )
-                .order ( ByteOrder.nativeOrder() ).asFloatBuffer();
-        mTexCoords = ByteBuffer.allocateDirect ( numVertices * 2 * 4 )
-                .order ( ByteOrder.nativeOrder() ).asFloatBuffer();
-        mIndices = ByteBuffer.allocateDirect ( numIndices * 2 )
-                .order ( ByteOrder.nativeOrder() ).asShortBuffer();
+        mVertices = ByteBuffer.allocateDirect ( numVertices * NUM_VERTICES_TRIANGLE * Float.BYTES ).order ( ByteOrder.nativeOrder() ).asFloatBuffer();
+        mNormals = ByteBuffer.allocateDirect ( numVertices * NUM_NORMALS_TRIANGLE * Float.BYTES ).order ( ByteOrder.nativeOrder() ).asFloatBuffer();
+        mTexCoords = ByteBuffer.allocateDirect ( numVertices * NUM_COORDS_TEX_2D * Float.BYTES ).order ( ByteOrder.nativeOrder() ).asFloatBuffer();
+        mIndices = ByteBuffer.allocateDirect ( numIndices * Short.BYTES ).order ( ByteOrder.nativeOrder() ).asShortBuffer();
 
         mVertices.put ( cubeVerts ).position ( 0 );
 
@@ -137,9 +118,10 @@ public class ESShapes
         mNormals.put ( cubeNormals ).position ( 0 );
         mTexCoords.put ( cubeTex ).position ( 0 );
 
-        short[] cubeIndices = { 0, 2, 1, 0, 3, 2, 4, 5, 6, 4, 6, 7, 8, 9, 10,
-                8, 10, 11, 12, 15, 14, 12, 14, 13, 16, 17, 18, 16, 18, 19, 20,
-                23, 22, 20, 22, 21
+        short[] cubeIndices = {
+           0, 2, 1, 0, 3, 2, 4, 5, 6, 4, 6, 7, 8, 9, 10,
+           8, 10, 11, 12, 15, 14, 12, 14, 13, 16, 17, 18, 16, 18, 19, 20,
+           23, 22, 20, 22, 21
         };
 
         mIndices.put ( cubeIndices ).position ( 0 );
@@ -157,8 +139,8 @@ public class ESShapes
         float stepSize = (float) size - 1;
 
         // Allocate memory for buffers
-        mVertices = ByteBuffer.allocateDirect ( numVertices * 3 * 4 ).order ( ByteOrder.nativeOrder() ).asFloatBuffer();
-        mIndices = ByteBuffer.allocateDirect ( numIndices * 2 ).order ( ByteOrder.nativeOrder() ).asShortBuffer();
+        mVertices = ByteBuffer.allocateDirect ( numVertices * NUM_VERTICES_TRIANGLE * Float.BYTES ).order ( ByteOrder.nativeOrder() ).asFloatBuffer();
+        mIndices = ByteBuffer.allocateDirect ( numIndices * Short.BYTES ).order ( ByteOrder.nativeOrder() ).asShortBuffer();
 
         for ( i = 0; i < size; ++i ) // row
         {
@@ -189,22 +171,10 @@ public class ESShapes
         return numIndices;
     }
 
-    public FloatBuffer getVertices()
-    {
-        return mVertices;
-    }
-    public FloatBuffer getNormals()
-    {
-        return mNormals;
-    }
-    public FloatBuffer getTexCoords()
-    {
-        return mTexCoords;
-    }
-    public ShortBuffer getIndices()
-    {
-        return mIndices;
-    }
+    public FloatBuffer getVertices() { return mVertices; }
+    public FloatBuffer getNormals() { return mNormals; }
+    public FloatBuffer getTexCoords() { return mTexCoords; }
+    public ShortBuffer getIndices() { return mIndices; }
     public int getNumIndices() { return mNumIndices; }
 
     // Member variables
@@ -213,4 +183,10 @@ public class ESShapes
     private FloatBuffer mTexCoords;
     private ShortBuffer mIndices;
     private int mNumIndices;
+
+    // Some constants
+    private final int NUM_VERTICES_TRIANGLE = 3;
+    private final int NUM_NORMALS_TRIANGLE = 3;
+    private final int NUM_COORDS_TEX_2D = 2;
+    private final int NUM_COORDS_TEX_3D = 3;
 }

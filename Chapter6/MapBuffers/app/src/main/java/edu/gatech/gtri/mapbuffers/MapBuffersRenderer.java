@@ -87,6 +87,9 @@ public class MapBuffersRenderer implements GLSurfaceView.Renderer
         // mVBOIds[l] - used to store element indices
         if ( mVBOIds[0] == 0 && mVBOIds[1] == 0 )
         {
+            FloatBuffer vtxMappedBuf;
+            ShortBuffer idxMappedBuf;
+
             // Only allocate on the first draw
             GLES30.glGenBuffers ( 2, mVBOIds, 0 );
 
@@ -157,9 +160,6 @@ public class MapBuffersRenderer implements GLSurfaceView.Renderer
     // Additional member variables
     private int mWidth;
     private int mHeight;
-
-    private FloatBuffer vtxMappedBuf;
-    private ShortBuffer idxMappedBuf;
 
     // VertexBufferObject Ids
     private int [] mVBOIds = new int[2];

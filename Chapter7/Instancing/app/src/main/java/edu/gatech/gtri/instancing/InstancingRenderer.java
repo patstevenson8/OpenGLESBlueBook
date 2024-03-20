@@ -12,8 +12,10 @@ import android.os.SystemClock;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
 import java.util.Random;
 
@@ -75,7 +77,7 @@ public class InstancingRenderer implements GLSurfaceView.Renderer
       // Index buffer object
       GLES30.glGenBuffers ( 1, indicesIBO, 0 );
       GLES30.glBindBuffer ( GLES30.GL_ELEMENT_ARRAY_BUFFER, indicesIBO[0] );
-      GLES30.glBufferData ( GLES30.GL_ELEMENT_ARRAY_BUFFER, Integer.BYTES * mCube.getNumIndices(), mCube.getIndices(), GLES30.GL_STATIC_DRAW );
+      GLES30.glBufferData ( GLES30.GL_ELEMENT_ARRAY_BUFFER, Short.BYTES * mCube.getNumIndices(), mCube.getIndices(), GLES30.GL_STATIC_DRAW );
       GLES30.glBindBuffer ( GLES30.GL_ELEMENT_ARRAY_BUFFER, 0 );
 
       // Position VBO for cube model
@@ -86,10 +88,11 @@ public class InstancingRenderer implements GLSurfaceView.Renderer
       // Random color for each instance
       Random rand = new Random ( 0 );
       {
-         short [] colors = new short[NUM_INSTANCES * Float.BYTES];
-         ShortBuffer mColors = ByteBuffer.allocateDirect ( NUM_INSTANCES * 2 * Float.BYTES).order ( ByteOrder.nativeOrder() ).asShortBuffer();
+         int instance;
+         float [] colors = new float[NUM_INSTANCES * Float.BYTES];
+         FloatBuffer mColors = ByteBuffer.allocateDirect ( NUM_INSTANCES * colors.length * Float.BYTES).order ( ByteOrder.nativeOrder() ).asFloatBuffer();
 
-         for ( int instance = 0; instance < NUM_INSTANCES; instance++ )
+         for ( instance = 0; instance < NUM_INSTANCES; instance++ )
          {
             colors[instance * Float.BYTES + 0] = (short) (rand.nextInt() % 255);
             colors[instance * Float.BYTES + 1] = (short) (rand.nextInt() % 255);
@@ -100,12 +103,14 @@ public class InstancingRenderer implements GLSurfaceView.Renderer
 
          GLES30.glGenBuffers ( 1, colorVBO, 0 );
          GLES30.glBindBuffer ( GLES30.GL_ARRAY_BUFFER, colorVBO[0] );
-         GLES30.glBufferData ( GLES30.GL_ARRAY_BUFFER, NUM_INSTANCES * 4, mColors, GLES30.GL_STATIC_DRAW );
+         GLES30.glBufferData ( GLES30.GL_ARRAY_BUFFER, NUM_INSTANCES * colors.length * Float.BYTES, mColors, GLES30.GL_STATIC_DRAW );
       }
 
       // Allocate storage to store MVP per instance
       {
          int instance;
+         int numVertices = new ESTransform().get().length;
+         int vtxStride = 4 * ( VERTEX_POS_SIZE );
 
          // Random angle for each instance, compute the MVP later
          for ( instance = 0; instance < NUM_INSTANCES; instance++ )
@@ -115,7 +120,7 @@ public class InstancingRenderer implements GLSurfaceView.Renderer
 
          GLES30.glGenBuffers ( 1, mvpVBO, 0 );
          GLES30.glBindBuffer ( GLES30.GL_ARRAY_BUFFER, mvpVBO[0] );
-         GLES30.glBufferData ( GLES30.GL_ARRAY_BUFFER, NUM_INSTANCES * mvpMatrix.get().length, null, GLES30.GL_DYNAMIC_DRAW );
+         GLES30.glBufferData ( GLES30.GL_ARRAY_BUFFER, vtxStride * numVertices * NUM_INSTANCES, null, GLES30.GL_DYNAMIC_DRAW );
       }
       GLES30.glBindBuffer ( GLES30.GL_ARRAY_BUFFER, 0 );
 
@@ -125,12 +130,14 @@ public class InstancingRenderer implements GLSurfaceView.Renderer
 
    private void update()
    {
-      ESTransform matrixBuf = new ESTransform();
+      FloatBuffer matrixBuf;
       ESTransform perspective = new ESTransform();
-      float    aspect;
-      int      instance = 0;
-      int      numRows;
-      int      numColumns;
+      float aspect;
+      int instance = 0;
+      int numRows;
+      int numColumns;
+      int numVertices = new ESTransform().get().length;
+      int vtxStride = 4 * ( VERTEX_POS_SIZE );
 
       if ( mLastTime == 0 )
       {
@@ -150,25 +157,11 @@ public class InstancingRenderer implements GLSurfaceView.Renderer
       perspective.perspective ( 60.0f, aspect, 1.0f, 20.0f );
 
       GLES30.glBindBuffer ( GLES30.GL_ARRAY_BUFFER, mvpVBO[0] );
-      //matrixBuf = GLES30.glMapBufferRange ( GLES30.GL_ARRAY_BUFFER, 0, matrixBuf.get().length * NUM_INSTANCES, GLES30.GL_MAP_WRITE_BIT );
-
-
-
       matrixBuf =
          ( ( ByteBuffer ) GLES30.glMapBufferRange (
-            GLES30.GL_ARRAY_BUFFER, 0, vtxStride * 3,
-            GLES30.GL_MAP_WRITE_BIT | GLES30.GL_MAP_INVALIDATE_BUFFER_BIT )
+            GLES30.GL_ARRAY_BUFFER, 0, vtxStride * numVertices * NUM_INSTANCES,
+            GLES30.GL_MAP_WRITE_BIT )
          ).order ( ByteOrder.nativeOrder() ).asFloatBuffer();
-
-      // Copy the data into the mapped buffer
-      matrixBuf.put ( mCube.getVertices() ).position ( 0 );
-
-      // Unmap the buffer
-      GLES30.glUnmapBuffer ( GLES30.GL_ARRAY_BUFFER );
-
-
-
-
 
       // Compute a per-instance MVP that translates and rotates each instance differnetly
       numRows = ( int ) Math.sqrt ( NUM_INSTANCES );
@@ -176,6 +169,7 @@ public class InstancingRenderer implements GLSurfaceView.Renderer
 
       for ( instance = 0; instance < NUM_INSTANCES; instance++ )
       {
+         ESTransform finalMat = new ESTransform();
          ESTransform modelview = new ESTransform();
          float translateX = ((float) (instance % numRows) / (float) numRows) * 2.0f - 1.0f;
          float translateY = ((float) (instance / numColumns) / (float) numColumns) * 2.0f - 1.0f;
@@ -199,14 +193,18 @@ public class InstancingRenderer implements GLSurfaceView.Renderer
 
          // Compute the final MVP by multiplying the
          // modevleiw and perspective matrices together
-         matrixBuf[instance].matrixMultiply(modelview.get(), perspective.get());
+         finalMat.matrixLoadIdentity();
+         finalMat.matrixMultiply(modelview.get(), perspective.get());
+
+         // Copy the data into the mapped buffer
+         matrixBuf.put ( finalMat.getAsFloatBuffer() ).position ( instance * 16 );
       }
 
       GLES30.glUnmapBuffer ( GLES30.GL_ARRAY_BUFFER );
    }
 
    ///
-   // Draw the globe
+   // Draw
    //
    public void onDrawFrame ( GL10 glUnused )
    {
@@ -225,7 +223,7 @@ public class InstancingRenderer implements GLSurfaceView.Renderer
 
       // Load the instance color buffer
       GLES30.glBindBuffer ( GLES30.GL_ARRAY_BUFFER, colorVBO[0] );
-      GLES30.glVertexAttribPointer ( COLOR_LOC, 4, GLES30.GL_SHORT, true, 4 * 2, 0 );
+      GLES30.glVertexAttribPointer ( COLOR_LOC, 4, GLES30.GL_FLOAT, true, 4 * Float.BYTES, 0 );
       GLES30.glEnableVertexAttribArray ( COLOR_LOC );
       GLES30.glVertexAttribDivisor ( COLOR_LOC, 1 ); // One color per instance
 
@@ -233,10 +231,10 @@ public class InstancingRenderer implements GLSurfaceView.Renderer
       GLES30.glBindBuffer ( GLES30.GL_ARRAY_BUFFER, mvpVBO[0] );
 
       // Load each matrix row of the MVP.  Each row gets an increasing attribute location.
-      GLES30.glVertexAttribPointer ( MVP_LOC + 0, 4, GLES30.GL_FLOAT, false, mvpMatrix.get().length, 0 );
-      GLES30.glVertexAttribPointer ( MVP_LOC + 1, 4, GLES30.GL_FLOAT, false, mvpMatrix.get().length, Float.BYTES * 4 );
-      GLES30.glVertexAttribPointer ( MVP_LOC + 2, 4, GLES30.GL_FLOAT, false, mvpMatrix.get().length, Float.BYTES * 8 );
-      GLES30.glVertexAttribPointer ( MVP_LOC + 3, 4, GLES30.GL_FLOAT, false, mvpMatrix.get().length, Float.BYTES * 12 );
+      GLES30.glVertexAttribPointer ( MVP_LOC + 0, 4, GLES30.GL_FLOAT, false, 16, 0 );
+      GLES30.glVertexAttribPointer ( MVP_LOC + 1, 4, GLES30.GL_FLOAT, false, 16, Float.BYTES * 4 );
+      GLES30.glVertexAttribPointer ( MVP_LOC + 2, 4, GLES30.GL_FLOAT, false, 16, Float.BYTES * 8 );
+      GLES30.glVertexAttribPointer ( MVP_LOC + 3, 4, GLES30.GL_FLOAT, false, 16, Float.BYTES * 12 );
       GLES30.glEnableVertexAttribArray ( MVP_LOC + 0 );
       GLES30.glEnableVertexAttribArray ( MVP_LOC + 1 );
       GLES30.glEnableVertexAttribArray ( MVP_LOC + 2 );
@@ -252,7 +250,7 @@ public class InstancingRenderer implements GLSurfaceView.Renderer
       GLES30.glBindBuffer ( GL_ELEMENT_ARRAY_BUFFER, indicesIBO[0] );
 
       // Draw the cubes
-      GLES30.glDrawElementsInstanced ( GLES30.GL_TRIANGLES, mCube.getNumIndices(), GLES30.GL_SHORT, mCube.getIndices(), NUM_INSTANCES );
+      GLES30.glDrawElementsInstanced ( GLES30.GL_TRIANGLES, mCube.getNumIndices(), GLES30.GL_UNSIGNED_SHORT, 0, NUM_INSTANCES );
    }
 
    ///
@@ -278,14 +276,13 @@ public class InstancingRenderer implements GLSurfaceView.Renderer
    private final int COLOR_LOC = 1;
    private final int MVP_LOC = 2;
 
+   final int VERTEX_POS_SIZE = 3; // x, y and z
+
    // Vertex data
    private final ESShapes mCube = new ESShapes();
 
    // Rotation angle
    private float [] mAngle = new float[NUM_INSTANCES];
-
-   // MVP matrix
-   private final ESTransform mvpMatrix = new ESTransform();
 
    // Additional member variables
    private int mWidth;
