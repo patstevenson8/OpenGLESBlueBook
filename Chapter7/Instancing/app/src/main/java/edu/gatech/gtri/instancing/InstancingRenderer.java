@@ -97,7 +97,7 @@ public class InstancingRenderer implements GLSurfaceView.Renderer
             colors[instance * Float.BYTES + 0] = (short) (rand.nextInt() % 255);
             colors[instance * Float.BYTES + 1] = (short) (rand.nextInt() % 255);
             colors[instance * Float.BYTES + 2] = (short) (rand.nextInt() % 255);
-            colors[instance * Float.BYTES + 3] = 0;
+            colors[instance * Float.BYTES + 3] = 255;
          }
          mColors.put ( colors ).position ( 0 );
 
@@ -167,6 +167,8 @@ public class InstancingRenderer implements GLSurfaceView.Renderer
       numRows = ( int ) Math.sqrt ( NUM_INSTANCES );
       numColumns = numRows;
 
+      matrixBuf.position(0);
+
       for ( instance = 0; instance < NUM_INSTANCES; instance++ )
       {
          ESTransform finalMat = new ESTransform();
@@ -197,7 +199,7 @@ public class InstancingRenderer implements GLSurfaceView.Renderer
          finalMat.matrixMultiply(modelview.get(), perspective.get());
 
          // Copy the data into the mapped buffer
-         matrixBuf.put ( finalMat.getAsFloatBuffer() ).position ( instance * 16 );
+         matrixBuf.put ( finalMat.getAsFloatBuffer() );
       }
 
       GLES30.glUnmapBuffer ( GLES30.GL_ARRAY_BUFFER );
@@ -215,6 +217,8 @@ public class InstancingRenderer implements GLSurfaceView.Renderer
 
       // Clear the color buffer
       GLES30.glClear ( GLES30.GL_COLOR_BUFFER_BIT );
+
+      GLES30.glUseProgram(mProgramObject);
 
       // Load the vertex position
       GLES30.glBindBuffer ( GLES30.GL_ARRAY_BUFFER, positionVBO[0] );
