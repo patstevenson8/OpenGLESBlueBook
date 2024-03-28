@@ -90,37 +90,37 @@ public class InstancingRenderer implements GLSurfaceView.Renderer
       {
          int instance;
          float [] colors = new float[NUM_INSTANCES * Float.BYTES];
-         FloatBuffer mColors = ByteBuffer.allocateDirect ( NUM_INSTANCES * colors.length * Float.BYTES).order ( ByteOrder.nativeOrder() ).asFloatBuffer();
+         FloatBuffer mColors = ByteBuffer.allocateDirect ( colors.length * Float.BYTES ).order ( ByteOrder.nativeOrder() ).asFloatBuffer();
 
          for ( instance = 0; instance < NUM_INSTANCES; instance++ )
          {
-            colors[instance * Float.BYTES + 0] = (short) (rand.nextInt() % 255);
-            colors[instance * Float.BYTES + 1] = (short) (rand.nextInt() % 255);
-            colors[instance * Float.BYTES + 2] = (short) (rand.nextInt() % 255);
-            colors[instance * Float.BYTES + 3] = 255;
+            colors[instance * Float.BYTES + 0] = rand.nextFloat() % 255;
+            colors[instance * Float.BYTES + 1] = rand.nextFloat() % 255;
+            colors[instance * Float.BYTES + 2] = rand.nextFloat() % 255;
+            colors[instance * Float.BYTES + 3] = 0;
          }
          mColors.put ( colors ).position ( 0 );
 
          GLES30.glGenBuffers ( 1, colorVBO, 0 );
          GLES30.glBindBuffer ( GLES30.GL_ARRAY_BUFFER, colorVBO[0] );
-         GLES30.glBufferData ( GLES30.GL_ARRAY_BUFFER, NUM_INSTANCES * colors.length * Float.BYTES, mColors, GLES30.GL_STATIC_DRAW );
+         GLES30.glBufferData ( GLES30.GL_ARRAY_BUFFER, colors.length * Float.BYTES, mColors, GLES30.GL_STATIC_DRAW );
       }
 
       // Allocate storage to store MVP per instance
       {
          int instance;
-         int numVertices = new ESTransform().get().length;
+         int numElements = new ESTransform().get().length;
          int vtxStride = 4 * ( VERTEX_POS_SIZE );
 
          // Random angle for each instance, compute the MVP later
          for ( instance = 0; instance < NUM_INSTANCES; instance++ )
          {
-            mAngle[instance] = ( float ) ( rand.nextFloat() % 32768 ) / 32767.0f * 360.0f;
+            mAngle[instance] = rand.nextFloat() * 360.0f;
          }
 
          GLES30.glGenBuffers ( 1, mvpVBO, 0 );
          GLES30.glBindBuffer ( GLES30.GL_ARRAY_BUFFER, mvpVBO[0] );
-         GLES30.glBufferData ( GLES30.GL_ARRAY_BUFFER, vtxStride * numVertices * NUM_INSTANCES, null, GLES30.GL_DYNAMIC_DRAW );
+         GLES30.glBufferData ( GLES30.GL_ARRAY_BUFFER, NUM_INSTANCES * numElements * Float.BYTES, null, GLES30.GL_DYNAMIC_DRAW );
       }
       GLES30.glBindBuffer ( GLES30.GL_ARRAY_BUFFER, 0 );
 
@@ -136,7 +136,7 @@ public class InstancingRenderer implements GLSurfaceView.Renderer
       int instance = 0;
       int numRows;
       int numColumns;
-      int numVertices = new ESTransform().get().length;
+      int numElements = new ESTransform().get().length;
       int vtxStride = 4 * ( VERTEX_POS_SIZE );
 
       if ( mLastTime == 0 )
@@ -159,7 +159,7 @@ public class InstancingRenderer implements GLSurfaceView.Renderer
       GLES30.glBindBuffer ( GLES30.GL_ARRAY_BUFFER, mvpVBO[0] );
       matrixBuf =
          ( ( ByteBuffer ) GLES30.glMapBufferRange (
-            GLES30.GL_ARRAY_BUFFER, 0, vtxStride * numVertices * NUM_INSTANCES,
+            GLES30.GL_ARRAY_BUFFER, 0, Float.BYTES * numElements * NUM_INSTANCES,
             GLES30.GL_MAP_WRITE_BIT )
          ).order ( ByteOrder.nativeOrder() ).asFloatBuffer();
 
@@ -167,6 +167,7 @@ public class InstancingRenderer implements GLSurfaceView.Renderer
       numRows = ( int ) Math.sqrt ( NUM_INSTANCES );
       numColumns = numRows;
 
+      // Reset the buffer position to sequencially update
       matrixBuf.position(0);
 
       for ( instance = 0; instance < NUM_INSTANCES; instance++ )
@@ -218,6 +219,7 @@ public class InstancingRenderer implements GLSurfaceView.Renderer
       // Clear the color buffer
       GLES30.glClear ( GLES30.GL_COLOR_BUFFER_BIT );
 
+      // Use the program object
       GLES30.glUseProgram(mProgramObject);
 
       // Load the vertex position
@@ -235,10 +237,10 @@ public class InstancingRenderer implements GLSurfaceView.Renderer
       GLES30.glBindBuffer ( GLES30.GL_ARRAY_BUFFER, mvpVBO[0] );
 
       // Load each matrix row of the MVP.  Each row gets an increasing attribute location.
-      GLES30.glVertexAttribPointer ( MVP_LOC + 0, 4, GLES30.GL_FLOAT, false, 16, 0 );
-      GLES30.glVertexAttribPointer ( MVP_LOC + 1, 4, GLES30.GL_FLOAT, false, 16, Float.BYTES * 4 );
-      GLES30.glVertexAttribPointer ( MVP_LOC + 2, 4, GLES30.GL_FLOAT, false, 16, Float.BYTES * 8 );
-      GLES30.glVertexAttribPointer ( MVP_LOC + 3, 4, GLES30.GL_FLOAT, false, 16, Float.BYTES * 12 );
+      GLES30.glVertexAttribPointer ( MVP_LOC + 0, 4, GLES30.GL_FLOAT, false, 16 * Float.BYTES, 0                );
+      GLES30.glVertexAttribPointer ( MVP_LOC + 1, 4, GLES30.GL_FLOAT, false, 16 * Float.BYTES, Float.BYTES * 4  );
+      GLES30.glVertexAttribPointer ( MVP_LOC + 2, 4, GLES30.GL_FLOAT, false, 16 * Float.BYTES, Float.BYTES * 8  );
+      GLES30.glVertexAttribPointer ( MVP_LOC + 3, 4, GLES30.GL_FLOAT, false, 16 * Float.BYTES, Float.BYTES * 12 );
       GLES30.glEnableVertexAttribArray ( MVP_LOC + 0 );
       GLES30.glEnableVertexAttribArray ( MVP_LOC + 1 );
       GLES30.glEnableVertexAttribArray ( MVP_LOC + 2 );
